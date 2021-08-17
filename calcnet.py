@@ -20,6 +20,10 @@ class CalcNet(dict):
     #Set up the root node
     ##TODO
     ##self.root_node=
+    #The "node id" for the root node is `None`.
+    # None is not a valid identifier, so there is no chance of a conflict with a user-defined identifier,
+    # and this allows the default behavior of `recalculate_from` and related functions
+    ##self[None]=self.root_node
     #Set up the end node?
     ##TODO
     ##self.end_node=
@@ -32,21 +36,30 @@ class CalcNet(dict):
     """Remove a node from the calculation network"""
     ##TODO
     return
-  def full_order_update(self):
-    """Update the evaluation order for the entire network"""
-    self.partial_order_update(self.root_node)
-  def partial_order_update(self,node_id):
-    """Update the evaluation order starting from the given node"""
+  def get_node
+  def recalculate_from(self,node_id=None):
+    """Perform a recalculation of the network starting from the given node ID.
+
+    If no node ID is given, a recalculation of the entire network is performed"""
+    #Update the evalulation order
+    self._update_evaluation_order_from(node_id)
+    #Do the evaluations
+    self._evaluate_from(node_id)
+    return
+  def _update_evaluation_order_from(self,node_id=None):
+    """Update the evaluation order, starting from the given node.
+
+    If no node ID is given, the evaluation order for the entire network is updated."""
+    #Get the requested starting node
+    start_node = self[node_id]
     ##TODO
     return
-  def full_evaluation(self):
-    """Perform a full evaluation of the calculation network"""
-    self.partial_evaluation(self.root_node)
-    return
-  def partial_evaluation(self,node_id):
-    """Perform a partial evaluation, starting from the given node
+  def _evaluate_from(self,node_id=None):
+    """Perform an evaluation of the nodes, starting from the given node
     
-    Assumes the evaluation order is already up-to-date"""
+    Assumes the evaluation order is already up-to-date.
+    If no node ID is given, all nodes are evaluated."""
+    start_node = self[node_id]
     ##TODO
     return
 
@@ -87,9 +100,6 @@ class CalcNode:
     ##TODO
     #Recalculate if requested
     if self.auto_recalc:
-      #Update evaluation order
-      self.network.update_order()
-      #Update calculation
-      self.network.partial_evaluation(self.node_id)
+      self.network.recalculate_from(self.node_id)
     #Done
     return
