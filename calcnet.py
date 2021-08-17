@@ -1,38 +1,54 @@
 """A network of calculations, with dependency tracking."""
 
 class CalcNet(dict):
-  """A calculation network"""
+  """A calculation network
+  
+  Attributes:
+  
+    - auto_recalc = Boolean, True to automatically recalculate on a change to a node
+    - root_node = the root node of the calculation network:
+        The reverse dependencies of all nodes eventually lead back to this one,
+        and it has no reverse dependencies of its own.
+        This node has no dictionary entry.
+    - end_node = the end node of the calculation network
+        The forward dependencies of all nodes eventually lead up to this one,
+        and it has no forward dependencies of its own.
+        This node has no dictionary entry."""
   def __init__(self):
+    #Set the level of automation
+    self.auto_recalc=True
     #Set up the root node
     ##TODO
     ##self.root_node=
     #Set up the end node?
     ##TODO
     ##self.end_node=
+    return
   def add_node(self,node_id):
     """Add a node to the calculation network"""
     ##TODO
-    pass
+    return
   def remove_node(self,node_id):
     """Remove a node from the calculation network"""
     ##TODO
-    pass
+    return
   def full_order_update(self):
     """Update the evaluation order for the entire network"""
     self.partial_order_update(self.root_node)
   def partial_order_update(self,node_id):
     """Update the evaluation order starting from the given node"""
     ##TODO
-    pass
+    return
   def full_evaluation(self):
     """Perform a full evaluation of the calculation network"""
     self.partial_evaluation(self.root_node)
+    return
   def partial_evaluation(self,node_id):
     """Perform a partial evaluation, starting from the given node
     
     Assumes the evaluation order is already up-to-date"""
     ##TODO
-    pass
+    return
 
 class CalcNode:
   def __init__(self,node_id,expression,network):
@@ -67,3 +83,5 @@ class CalcNode:
     self.network.update_order()
     #Update calculation
     self.network.partial_evaluation(self.node_id)
+    #Done
+    return
