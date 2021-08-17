@@ -45,6 +45,7 @@ class CalcNode:
       - network = calculation network to which this node belongs
       - forward_deps = list of nodes that depend on this node
       - reverse_deps = list of nodes that this node depends on."""
+    ##TODO: provide a default value for the network, since we expect only one network per document?
     self.node_id=node_id
     self.forward_deps=[]
     self.reverse_deps=[]
