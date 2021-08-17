@@ -92,10 +92,16 @@ class CalcNode:
     parsed_expression=expression.split()
     #Get the new list of dependencies
     ##TODO: only allow single uppercase letters for now
-    self.reverse_deps=[token for token in parsed_expression if ord(token)>=65 and ord(token<=90)]
+    new_deps=[token for token in parsed_expression if ord(token)>=65 and ord(token<=90)]
+    #Confirm that all the identifiers are valid
+    invalid_deps=[d for d in new_deps if d not in self.network.keys()]
+    assert len(invalid_deps)==0, "Invalid identifiers in expression for {}: {}".format(self.node_id,str(invalid_deps))
+    #Update the reverse dependencies
+    self.reverse_deps=new_deps
     #Compile the expression
     ##TODO: no compiled form for now
     #Update the altered forward dependencies
+    ##old_fwds=self.forward_deps
     ##TODO
     #Recalculate if requested
     if self.auto_recalc:
