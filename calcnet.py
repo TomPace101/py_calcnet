@@ -1,4 +1,4 @@
-"""Testing out some of the ideas"""
+"""A network of calculations, with dependency tracking."""
 
 class CalcNet(dict):
   """A calculation network"""
