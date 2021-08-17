@@ -50,7 +50,7 @@ class CalcNode:
     self.forward_deps=[]
     self.reverse_deps=[]
     self.network=network
-    self.update_expression(expression)
+    self.revise_expression(expression)
     return
   def revise_expression(self,expression):
     """Make a change to the expression for an existing node"""
