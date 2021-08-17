@@ -54,6 +54,10 @@ class CalcNode:
   def __init__(self,node_id,expression,network):
     """A node in a calculation network.
 
+    A calculation node is defined by an expression that can be evaluated to produce a value.
+    TODO: expressions are currently in python syntax, but this will change.
+    TODO: the only variables currently allowed in an expression are single uppercase letters, but this will change.
+
     Attributes:
 
       - node_id = ID string for this node
@@ -72,16 +76,20 @@ class CalcNode:
     """Make a change to the expression for an existing node"""
     self.expression=expression
     #Parse the expression
-    ##TODO
+    ##TODO: just use whitespace now
+    parsed_expression=expression.split()
     #Get the new list of dependencies
-    ##TODO
+    ##TODO: only allow single uppercase letters for now
+    self.reverse_deps=[token for token in parsed_expression if ord(token)>=65 and ord(token<=90)]
     #Compile the expression
+    ##TODO: no compiled form for now
+    #Update the altered forward dependencies
     ##TODO
-    #Update dependency graph
-    ##TODO
-    #Update evaluation order
-    self.network.update_order()
-    #Update calculation
-    self.network.partial_evaluation(self.node_id)
+    #Recalculate if requested
+    if self.auto_recalc:
+      #Update evaluation order
+      self.network.update_order()
+      #Update calculation
+      self.network.partial_evaluation(self.node_id)
     #Done
     return
