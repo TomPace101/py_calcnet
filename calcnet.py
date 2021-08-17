@@ -36,7 +36,6 @@ class CalcNet(dict):
     """Remove a node from the calculation network"""
     ##TODO
     return
-  def get_node
   def recalculate_from(self,node_id=None):
     """Perform a recalculation of the network starting from the given node ID.
 
