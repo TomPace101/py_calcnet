@@ -9,7 +9,7 @@ class CalcNet(dict):
     - root_node = the root node of the calculation network:
         The reverse dependencies of all nodes eventually lead back to this one,
         and it has no reverse dependencies of its own.
-        This node has no dictionary entry.
+        This node's dictionary entry is ``None``.
     - end_node = the end node of the calculation network
         The forward dependencies of all nodes eventually lead up to this one,
         and it has no forward dependencies of its own.
