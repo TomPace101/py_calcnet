@@ -31,6 +31,12 @@ class CalcNet(dict):
   def add_node(self,node_id):
     """Add a node to the calculation network"""
     ##TODO
+    ##self.revise_node(node_id)
+    return
+  def revise_node(self,node_id):
+    """Make a change to an existing node"""
+    ##TODO
+    ##node=self[node_id]
     return
   def remove_node(self,node_id):
     """Remove a node from the calculation network"""
@@ -73,7 +79,7 @@ class CalcNode:
     Attributes:
 
       - node_id = ID string for this node
-      - expression = calculation expression for this node
+      - _expression = calculation expression for this node
       - network = calculation network to which this node belongs
       - forward_deps = list of nodes that depend on this node
       - reverse_deps = list of nodes that this node depends on."""
@@ -86,7 +92,7 @@ class CalcNode:
     return
   def revise_expression(self,expression):
     """Make a change to the expression for an existing node"""
-    self.expression=expression
+    self._expression=expression
     #Parse the expression
     ##TODO: just use whitespace now
     parsed_expression=expression.split()
@@ -107,4 +113,12 @@ class CalcNode:
     if self.auto_recalc:
       self.network.recalculate_from(self.node_id)
     #Done
+    return
+  def evaluate(self):
+    """Evaluate the expression
+    
+    ##TODO: this uses python ``eval`` for now"""
+    ##TODO: get the necessary variables into a dictionary
+    ##parameters=
+    ##self.value=eval(self._expression,parameters)
     return
