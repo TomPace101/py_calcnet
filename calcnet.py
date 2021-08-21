@@ -1,10 +1,11 @@
 """A network of calculations, with dependency tracking."""
 
-class CalcNet(dict):
+class CalcNet:
   """A calculation network
   
   Attributes:
   
+    - adjacency = adjacency dictionary for the graph of calculation nodes, {``node_id``: ``node``}
     - auto_recalc = Boolean, True to automatically recalculate on a change to a node
     - root_node = the root node of the calculation network:
         The reverse dependencies of all nodes eventually lead back to this one,
@@ -28,19 +29,44 @@ class CalcNet(dict):
     ##TODO
     ##self.end_node=
     return
-  def add_node(self,node_id):
+  def add_node(self,node_id,expression):
     """Add a node to the calculation network"""
+    self.adjacency[node_id]=CalcNode(node_id,expression)
+    self.update_adjacencies(node_id)
     ##TODO
-    ##self.revise_node(node_id)
     return
-  def revise_node(self,node_id):
+  def revise_node(self,node_id,expression):
     """Make a change to an existing node"""
-    ##TODO
-    ##node=self[node_id]
+    self.adjacency[node_id].expression=expression
+    self.update_adjacencies(node_id)
+    #Recalculate if requested
+    if self.auto_recalc:
+      self.recalculate_from(node_id)
     return
   def remove_node(self,node_id):
     """Remove a node from the calculation network"""
     ##TODO
+    return
+  def update_adjacencies(node_id):
+    """Update the reverse and forward dependencies from a single node"""
+    #Get the list of reverse dependencies
+    reverse_deps=self.adjacency[node_id].parse_expression()
+    #Confirm that all the reverse dependencies are valid
+    invalid_deps=[d for d in reverse_deps if d not in self.adjacency.keys()]
+    assert len(invalid_deps)==0, "Invalid identifiers in expression for {}: {}".format(node_id,str(invalid_deps))
+    #Find which dependencies are new, and which old dependencies have been removed
+    old_back_nodes=self.adjacency[node_id].reverse_deps
+    ##TODO: this is O(n^2) in the number of dependencies: use a more efficient approach
+    new_deps=[bid for bid in reverse_deps if bid not in old_back_nodes]
+    removed_deps=[bid for bid in old_back_nodes if not in reverse_deps]
+    #Add new dependencies to their forward list
+    ##TODO
+    #Remove deleted dependencies from their forward list
+    ##TODO
+    ##TODO: don't forget to sort any changed forward dependencies
+    #Update the reverse dependencies
+    self.adjacency[node_id].reverse_deps=reverse_deps
+    #Done
     return
   def recalculate_from(self,node_id=None):
     """Perform a recalculation of the network starting from the given node ID.
@@ -56,7 +82,7 @@ class CalcNet(dict):
 
     If no node ID is given, the evaluation order for the entire network is updated."""
     #Get the requested starting node
-    start_node = self[node_id]
+    start_node = self.adjacency[node_id]
     ##TODO
     return
   def _evaluate_from(self,node_id=None):
@@ -64,12 +90,12 @@ class CalcNet(dict):
     
     Assumes the evaluation order is already up-to-date.
     If no node ID is given, all nodes are evaluated."""
-    start_node = self[node_id]
+    start_node = self.adjacency[node_id]
     ##TODO
     return
 
 class CalcNode:
-  def __init__(self,node_id,expression,network):
+  def __init__(self,node_id,expression):
     """A node in a calculation network.
 
     A calculation node is defined by an expression that can be evaluated to produce a value.
@@ -79,46 +105,41 @@ class CalcNode:
     Attributes:
 
       - node_id = ID string for this node
-      - _expression = calculation expression for this node
-      - network = calculation network to which this node belongs
-      - forward_deps = list of nodes that depend on this node
-      - reverse_deps = list of nodes that this node depends on."""
+      - expression = calculation expression for this node
+      - reverse_deps = list of nodes that this node depends on.
+      - forward_deps = list of nodes that depend on this node"""
     ##TODO: provide a default value for the network, since we expect only one network per document?
     self.node_id=node_id
+    self.expression=expression
     self.forward_deps=[]
     self.reverse_deps=[]
-    self.network=network
-    self.revise_expression(expression)
     return
-  def revise_expression(self,expression):
-    """Make a change to the expression for an existing node"""
-    self._expression=expression
-    #Parse the expression
+  def parse_expression(self):
+    """Read the expression to obtain the reverse dependencies
+
+    TODO: compile the expression (not currently applicable)
+
+    Returns:
+
+      - reverse_deps = list of node ids for the reverse dependencies"""
     ##TODO: just use whitespace now
     parsed_expression=expression.split()
     #Get the new list of dependencies
     ##TODO: only allow single uppercase letters for now
-    new_deps=[token for token in parsed_expression if ord(token)>=65 and ord(token<=90)]
-    #Confirm that all the identifiers are valid
-    invalid_deps=[d for d in new_deps if d not in self.network.keys()]
-    assert len(invalid_deps)==0, "Invalid identifiers in expression for {}: {}".format(self.node_id,str(invalid_deps))
-    #Update the reverse dependencies
-    self.reverse_deps=new_deps
+    reverse_deps=[token for token in parsed_expression if ord(token)>=65 and ord(token<=90)]
+    #Sort for later efficiency
+    reverse_deps.sort()
+    ##TODO: remove duplications so items are unique
     #Compile the expression
     ##TODO: no compiled form for now
-    #Update the altered forward dependencies
-    ##old_fwds=self.forward_deps
-    ##TODO
-    #Recalculate if requested
-    if self.auto_recalc:
-      self.network.recalculate_from(self.node_id)
-    #Done
-    return
+    return reverse_deps
   def evaluate(self):
     """Evaluate the expression
     
     ##TODO: this uses python ``eval`` for now"""
     ##TODO: get the necessary variables into a dictionary
-    ##parameters=
+    ##parameters={}
+    ##for k in self.reverse_deps:
+    ##TODO
     ##self.value=eval(self._expression,parameters)
     return
