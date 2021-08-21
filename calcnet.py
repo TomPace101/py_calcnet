@@ -1,4 +1,53 @@
-"""A network of calculations, with dependency tracking."""
+"""A network of calculations, with dependency tracking.
+
+For now, test with:
+``python -m doctest calcnet.py``
+"""
+
+def get_differences(list_a,list_b):
+  """For two sorted lists a and b, find the elements in each not in the other
+
+  Conceptually, this is the same as
+
+    ``not_in_a=[x for x in list_b if x not in list_a]``
+    ``not_in_b=[x for x in list_a if x not in list_b]``
+
+  But that would have quadratic time complexity.
+  The algorithm here is linear in the number of elements, but requires the lists to be previously sorted,
+  so the overall complexity is n log n.
+
+  >>> a = [0,1,3,4,5,7,9]
+  >>> b = [0,2,3,4,6,7,8]
+  >>> not_in_a, not_in_b = get_differences(a,b)
+  >>> not_in_a
+  [2, 6, 8]
+  >>> not_in_b
+  [1, 5, 9]
+
+  Returns:
+
+    - not_in_a = elements in list b not in list a
+    - not_in_b = elements in list a not in list b"""
+  idx_a=idx_b=0
+  not_in_a=[]
+  not_in_b=[]
+  while idx_a < len(list_a) and idx_b < len(list_b):
+    if list_a[idx_a] == list_b[idx_b]:
+      idx_a += 1
+      idx_b += 1
+    elif list_a[idx_a] < list_b[idx_b]:
+      not_in_b.append(list_a[idx_a])
+      idx_a += 1
+    elif list_b[idx_b] < list_a[idx_a]:
+      not_in_a.append(list_b[idx_b])
+      idx_b += 1
+    else:
+      raise Exception("This should not have happened.")
+  if len(list_a) > idx_a:
+    not_in_b += list_a[idx_a:]
+  if len(list_b) > idx_b:
+    not_in_a += list_b[idx_b:]
+  return not_in_a, not_in_b
 
 class CalcNet:
   """A calculation network
@@ -50,15 +99,13 @@ class CalcNet:
   def update_adjacencies(node_id):
     """Update the reverse and forward dependencies from a single node"""
     #Get the list of reverse dependencies
-    reverse_deps=self.adjacency[node_id].parse_expression()
+    reverse_deps=self.adjacency[node_id].process_expression()
     #Confirm that all the reverse dependencies are valid
     invalid_deps=[d for d in reverse_deps if d not in self.adjacency.keys()]
     assert len(invalid_deps)==0, "Invalid identifiers in expression for {}: {}".format(node_id,str(invalid_deps))
     #Find which dependencies are new, and which old dependencies have been removed
     old_back_nodes=self.adjacency[node_id].reverse_deps
-    ##TODO: this is O(n^2) in the number of dependencies: use a more efficient approach
-    new_deps=[bid for bid in reverse_deps if bid not in old_back_nodes]
-    removed_deps=[bid for bid in old_back_nodes if not in reverse_deps]
+    new_deps,removed_deps=get_differences(reverse_deps,old_back_nodes)
     #Add new dependencies to their forward list
     ##TODO
     #Remove deleted dependencies from their forward list
@@ -106,15 +153,17 @@ class CalcNode:
 
       - node_id = ID string for this node
       - expression = calculation expression for this node
+      - value = result of the expression evaluation (None if not yet evaluated)
       - reverse_deps = list of nodes that this node depends on.
       - forward_deps = list of nodes that depend on this node"""
     ##TODO: provide a default value for the network, since we expect only one network per document?
     self.node_id=node_id
     self.expression=expression
+    self.value=None
     self.forward_deps=[]
     self.reverse_deps=[]
     return
-  def parse_expression(self):
+  def process_expression(self):
     """Read the expression to obtain the reverse dependencies
 
     TODO: compile the expression (not currently applicable)
@@ -126,10 +175,16 @@ class CalcNode:
     parsed_expression=expression.split()
     #Get the new list of dependencies
     ##TODO: only allow single uppercase letters for now
-    reverse_deps=[token for token in parsed_expression if ord(token)>=65 and ord(token<=90)]
+    new_deps=[token for token in parsed_expression if ord(token)>=65 and ord(token<=90)]
     #Sort for later efficiency
-    reverse_deps.sort()
-    ##TODO: remove duplications so items are unique
+    new_deps.sort()
+    #Remove duplications so items are unique
+    last=new_deps[0]
+    reverse_deps=[last]
+    for itm in new_deps[1:]:
+      if itm != last:
+        last=itm
+        reverse_deps.append(last)
     #Compile the expression
     ##TODO: no compiled form for now
     return reverse_deps
