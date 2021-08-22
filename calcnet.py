@@ -34,6 +34,24 @@ def is_sorted(seq):
       last = itm
   return res
 
+def get_uniques(seq):
+  """Return a list of the unique items in a a sorted sequence.
+
+  >>> get_uniques([1,2,2,3])
+  [1, 2, 3]
+
+  """
+  if len(seq)<=1:
+    return seq
+  else:
+    last=seq[0]
+    out=[last]
+    for itm in seq[1:]:
+      if itm != last:
+        last=itm
+        out.append(last)
+    return out
+
 def get_differences(list_a,list_b):
   """For two sorted lists a and b, find the elements in each not in the other
 
@@ -211,12 +229,7 @@ class CalcNode:
     #Sort for later efficiency
     new_deps.sort()
     #Remove duplications so items are unique
-    last=new_deps[0]
-    reverse_deps=[last]
-    for itm in new_deps[1:]:
-      if itm != last:
-        last=itm
-        reverse_deps.append(last)
+    reverse_deps=get_uniques(new_deps)
     #Compile the expression
     ##TODO: no compiled form for now
     return reverse_deps
