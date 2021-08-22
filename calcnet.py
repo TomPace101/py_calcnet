@@ -4,6 +4,36 @@ For now, test with:
 ``python -m doctest calcnet.py``
 """
 
+def is_sorted(seq):
+  """Return True if the sequence is properly sorted
+
+  Conceptually, this is the same as ``all([seq[i-1]<itm for i,itm in enumerate(seq[1:])])``,
+  but it's more careful about zero-length lists and makes sure each element is only accessed once.
+
+  >>> is_sorted([1,2,5,10,20])
+  True
+  >>> is_sorted([6,9,3,10])
+  False
+
+  Duplicates in the sequence are allowed.
+
+  >>> is_sorted([1,2,2,3])
+  True
+
+  """
+  if len(seq)==0:
+    return True
+  else:
+    #Compare each item in the list to the following item
+    last=seq[0]
+    for i in range(1,len(seq)):
+      itm=seq[i]
+      res = last <= itm
+      if not res:
+        break
+      last = itm
+  return res
+
 def get_differences(list_a,list_b):
   """For two sorted lists a and b, find the elements in each not in the other
 
@@ -28,6 +58,8 @@ def get_differences(list_a,list_b):
 
     - not_in_a = elements in list b not in list a
     - not_in_b = elements in list a not in list b"""
+  assert is_sorted(list_a), "Received unsorted list A."
+  assert is_sorted(list_b), "Received unsorted list B."
   idx_a=idx_b=0
   not_in_a=[]
   not_in_b=[]
