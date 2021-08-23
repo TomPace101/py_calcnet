@@ -20,8 +20,15 @@ def is_sorted(seq):
   >>> is_sorted([1,2,2,3])
   True
 
+  Special cases:
+
+  >>> is_sorted([100])
+  True
+  >>> is_sorted([])
+  True
+
   """
-  if len(seq)==0:
+  if len(seq)<=1:
     return True
   else:
     #Compare each item in the list to the following item
@@ -39,6 +46,10 @@ def get_uniques(seq):
 
   >>> get_uniques([1,2,2,3])
   [1, 2, 3]
+  >>> get_uniques([99])
+  [99]
+  >>> get_uniques([])
+  []
 
   """
   if len(seq)<=1:
@@ -123,7 +134,7 @@ class CalcNet:
     #The "node id" for the root node is `None`.
     # None is not a valid identifier, so there is no chance of a conflict with a user-defined identifier,
     # and this allows the default behavior of `recalculate_from` and related functions
-    ##self[None]=self.root_node
+    ##self.adjacency[None]=self.root_node
     #Set up the end node?
     ##TODO
     ##self.end_node=
@@ -132,7 +143,9 @@ class CalcNet:
     """Add a node to the calculation network"""
     self.adjacency[node_id]=CalcNode(node_id,expression)
     self.update_adjacencies(node_id)
-    ##TODO
+    #Evaluate node if requested
+    if self.auto_recalc:
+      self.adjacency[node_id].evaluate()
     return
   def revise_node(self,node_id,expression):
     """Make a change to an existing node"""
@@ -145,6 +158,7 @@ class CalcNet:
   def remove_node(self,node_id):
     """Remove a node from the calculation network"""
     ##TODO
+    raise NotImplementedError("Node removal not yet implemented")
     return
   def update_adjacencies(node_id):
     """Update the reverse and forward dependencies from a single node"""
@@ -181,6 +195,7 @@ class CalcNet:
     #Get the requested starting node
     start_node = self.adjacency[node_id]
     ##TODO
+    raise NotImplementedError("Evaluation order update not yet implemented.")
     return
   def _evaluate_from(self,node_id=None):
     """Perform an evaluation of the nodes, starting from the given node
@@ -189,6 +204,7 @@ class CalcNet:
     If no node ID is given, all nodes are evaluated."""
     start_node = self.adjacency[node_id]
     ##TODO
+    raise NotImplementedError("Network calculation not yet implemented.")
     return
 
 class CalcNode:
@@ -206,7 +222,6 @@ class CalcNode:
       - value = result of the expression evaluation (None if not yet evaluated)
       - reverse_deps = list of nodes that this node depends on.
       - forward_deps = list of nodes that depend on this node"""
-    ##TODO: provide a default value for the network, since we expect only one network per document?
     self.node_id=node_id
     self.expression=expression
     self.value=None
@@ -242,4 +257,5 @@ class CalcNode:
     ##for k in self.reverse_deps:
     ##TODO
     ##self.value=eval(self._expression,parameters)
+    raise NotImplementedError("Evaluation not yet implemented.")
     return
