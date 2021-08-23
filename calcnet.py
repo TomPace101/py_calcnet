@@ -166,11 +166,28 @@ class CalcNet:
       self.recalculate_from(node_id)
     return
   def remove_node(self,node_id):
-    """Remove a node from the calculation network"""
+    """Remove a node from the calculation network
+    
+    >>> net=CalcNet(auto_recalc=False)
+    >>> net.add_node("X","10")
+    >>> net.remove_node("X")
+    >>> net.adjacency
+    {}
+
+    Only nodes that no other nodes depend on can be removed.
+
+    >>> net.add_node("Y","20")
+    >>> net.add_node("Z","Y + 10")
+    >>> net.remove_node("Y")
+    Traceback (most recent call last):
+    AssertionError: Cannot remove Y because other nodes depend on it: ['Z'].
+
+    """
     #Make sure nothing depends on this node
-    assert len(self.adjacency[node_id].forward_deps) == 0, "Cannot remove node {} because other nodes depend on it.".format(node_id)
-    ##TODO
-    raise NotImplementedError("Node removal not yet implemented")
+    fwd=self.adjacency[node_id].forward_deps
+    assert len(fwd) == 0, "Cannot remove {} because other nodes depend on it: {}.".format(node_id, str(fwd))
+    #Remove the node from the adjacency list
+    self.adjacency.pop(node_id)
     return
   def update_adjacencies(self,node_id):
     """Update the reverse and forward dependencies from a single node
