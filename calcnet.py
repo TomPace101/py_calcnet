@@ -171,17 +171,29 @@ class CalcNet:
     raise NotImplementedError("Node removal not yet implemented")
     return
   def update_adjacencies(self,node_id):
-    """Update the reverse and forward dependencies from a single node"""
+    """Update the reverse and forward dependencies from a single node
+    
+    >>> net=CalcNet(auto_recalc=False)
+    >>> net.add_node("A","5")
+    >>> net.add_node("B","10")
+    >>> net.add_node("C","15")
+    >>> net.add_node("D","A + B + C")
+    >>> net.adjacency["D"].reverse_deps
+    ['A', 'B', 'C']
+    >>> net.adjacency["A"].forward_deps
+    ['D']
+    
+    """
     #Get the list of reverse dependencies
     reverse_deps=self.adjacency[node_id].process_expression()
     #Confirm that all the reverse dependencies are valid
     invalid_deps=[d for d in reverse_deps if d not in self.adjacency.keys()]
     assert len(invalid_deps)==0, "Invalid identifiers in expression for {}: {}".format(node_id,str(invalid_deps))
-    #Update the reverse dependencies
-    self.adjacency[node_id].reverse_deps=reverse_deps
     #Find which dependencies are new, and which old dependencies have been removed
     old_back_nodes=self.adjacency[node_id].reverse_deps
-    new_deps,removed_deps=get_differences(reverse_deps,old_back_nodes)
+    removed_deps,new_deps=get_differences(reverse_deps,old_back_nodes)
+    #Update the reverse dependencies
+    self.adjacency[node_id].reverse_deps=reverse_deps
     #Add new dependencies to their forward list
     for dep_id in new_deps:
       self.adjacency[dep_id].forward_deps.append(node_id)
@@ -255,7 +267,8 @@ class CalcNode:
     parsed_expression=self.expression.split()
     #Get the new list of dependencies
     ##TODO: only allow single uppercase letters for now
-    new_deps=[token for token in parsed_expression if ord(token)>=65 and ord(token<=90)]
+    candidates=[token for token in parsed_expression if len(token)==1]
+    new_deps=[token for token in candidates if ord(token)>=65 and ord(token)<=90]
     #Sort for later efficiency
     new_deps.sort()
     #Remove duplications so items are unique
