@@ -125,9 +125,11 @@ class CalcNet:
         The forward dependencies of all nodes eventually lead up to this one,
         and it has no forward dependencies of its own.
         This node has no dictionary entry."""
-  def __init__(self):
+  def __init__(self,auto_recalc=True):
     #Set the level of automation
-    self.auto_recalc=True
+    self.auto_recalc=auto_recalc
+    #Initialize adjacency dictionary
+    self.adjacency={}
     #Set up the root node
     ##TODO
     ##self.root_node=
@@ -140,10 +142,18 @@ class CalcNet:
     ##self.end_node=
     return
   def add_node(self,node_id,expression):
-    """Add a node to the calculation network"""
+    """Add a node to the calculation network
+    
+    >>> net = CalcNet(auto_recalc=False)
+    >>> net.add_node("A","5")
+    >>> net.adjacency["A"].expression == "5"
+    True
+    
+    """
     self.adjacency[node_id]=CalcNode(node_id,expression)
     self.update_adjacencies(node_id)
     #Evaluate node if requested
+    #(All dependencies have to be satisfied to add a node, so nothing else needs to be updated)
     if self.auto_recalc:
       self.adjacency[node_id].evaluate()
     return
@@ -160,23 +170,28 @@ class CalcNet:
     ##TODO
     raise NotImplementedError("Node removal not yet implemented")
     return
-  def update_adjacencies(node_id):
+  def update_adjacencies(self,node_id):
     """Update the reverse and forward dependencies from a single node"""
     #Get the list of reverse dependencies
     reverse_deps=self.adjacency[node_id].process_expression()
     #Confirm that all the reverse dependencies are valid
     invalid_deps=[d for d in reverse_deps if d not in self.adjacency.keys()]
     assert len(invalid_deps)==0, "Invalid identifiers in expression for {}: {}".format(node_id,str(invalid_deps))
+    #Update the reverse dependencies
+    self.adjacency[node_id].reverse_deps=reverse_deps
     #Find which dependencies are new, and which old dependencies have been removed
     old_back_nodes=self.adjacency[node_id].reverse_deps
     new_deps,removed_deps=get_differences(reverse_deps,old_back_nodes)
     #Add new dependencies to their forward list
-    ##TODO
+    for dep_id in new_deps:
+      self.adjacency[dep_id].forward_deps.append(node_id)
+      #Keep the list sorted
+      self.adjacency[dep_id].forward_deps.sort()
     #Remove deleted dependencies from their forward list
-    ##TODO
-    ##TODO: don't forget to sort any changed forward dependencies
-    #Update the reverse dependencies
-    self.adjacency[node_id].reverse_deps=reverse_deps
+    for dep_id in removed_deps:
+      fwd=self.adjacency[dep_id].forward_deps
+      fwd.pop(fwd.index(dep_id))
+      #No need to re-sort because we're removing an item from a sorted list
     #Done
     return
   def recalculate_from(self,node_id=None):
@@ -237,7 +252,7 @@ class CalcNode:
 
       - reverse_deps = list of node ids for the reverse dependencies"""
     ##TODO: just use whitespace now
-    parsed_expression=expression.split()
+    parsed_expression=self.expression.split()
     #Get the new list of dependencies
     ##TODO: only allow single uppercase letters for now
     new_deps=[token for token in parsed_expression if ord(token)>=65 and ord(token<=90)]
