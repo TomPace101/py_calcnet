@@ -167,6 +167,8 @@ class CalcNet:
     return
   def remove_node(self,node_id):
     """Remove a node from the calculation network"""
+    #Make sure nothing depends on this node
+    assert len(self.adjacency[node_id].forward_deps) == 0, "Cannot remove node {} because other nodes depend on it.".format(node_id)
     ##TODO
     raise NotImplementedError("Node removal not yet implemented")
     return
