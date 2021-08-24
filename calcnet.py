@@ -111,20 +111,20 @@ def get_differences(list_a,list_b):
   return not_in_a, not_in_b
 
 class CalcNode:
+  """A node in a calculation network.
+
+  A calculation node is defined by an expression that can be evaluated to produce a value.
+  TODO: expressions are currently in python syntax, but this will change.
+  TODO: the only variables currently allowed in an expression are single uppercase letters, but this will change.
+
+  Attributes:
+
+    - node_id = ID string for this node
+    - expression = calculation expression for this node
+    - value = result of the expression evaluation (None if not yet evaluated)
+    - reverse_deps = list of nodes that this node depends on.
+    - forward_deps = list of nodes that depend on this node"""
   def __init__(self,node_id,expression):
-    """A node in a calculation network.
-
-    A calculation node is defined by an expression that can be evaluated to produce a value.
-    TODO: expressions are currently in python syntax, but this will change.
-    TODO: the only variables currently allowed in an expression are single uppercase letters, but this will change.
-
-    Attributes:
-
-      - node_id = ID string for this node
-      - expression = calculation expression for this node
-      - value = result of the expression evaluation (None if not yet evaluated)
-      - reverse_deps = list of nodes that this node depends on.
-      - forward_deps = list of nodes that depend on this node"""
     self.node_id=node_id
     self.expression=expression
     self.value=None
