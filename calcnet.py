@@ -110,6 +110,60 @@ def get_differences(list_a,list_b):
     not_in_a += list_b[idx_b:]
   return not_in_a, not_in_b
 
+class CalcNode:
+  def __init__(self,node_id,expression):
+    """A node in a calculation network.
+
+    A calculation node is defined by an expression that can be evaluated to produce a value.
+    TODO: expressions are currently in python syntax, but this will change.
+    TODO: the only variables currently allowed in an expression are single uppercase letters, but this will change.
+
+    Attributes:
+
+      - node_id = ID string for this node
+      - expression = calculation expression for this node
+      - value = result of the expression evaluation (None if not yet evaluated)
+      - reverse_deps = list of nodes that this node depends on.
+      - forward_deps = list of nodes that depend on this node"""
+    self.node_id=node_id
+    self.expression=expression
+    self.value=None
+    self.forward_deps=[]
+    self.reverse_deps=[]
+    return
+  def process_expression(self):
+    """Read the expression to obtain the reverse dependencies
+
+    TODO: compile the expression (not currently applicable)
+
+    Returns:
+
+      - reverse_deps = list of node ids for the reverse dependencies"""
+    ##TODO: just use whitespace now
+    parsed_expression=self.expression.split()
+    #Get the new list of dependencies
+    ##TODO: only allow single uppercase letters for now
+    candidates=[token for token in parsed_expression if len(token)==1]
+    new_deps=[token for token in candidates if ord(token)>=65 and ord(token)<=90]
+    #Sort for later efficiency
+    new_deps.sort()
+    #Remove duplications so items are unique
+    reverse_deps=get_uniques(new_deps)
+    #Compile the expression
+    ##TODO: no compiled form for now
+    return reverse_deps
+  def evaluate(self):
+    """Evaluate the expression
+    
+    ##TODO: this uses python ``eval`` for now"""
+    ##TODO: get the necessary variables into a dictionary
+    ##parameters={}
+    ##for k in self.reverse_deps:
+    ##TODO
+    ##self.value=eval(self._expression,parameters)
+    raise NotImplementedError("Evaluation not yet implemented.")
+    return
+
 class CalcNet:
   """A calculation network
   
@@ -251,58 +305,4 @@ class CalcNet:
     start_node = self.adjacency[node_id]
     ##TODO
     raise NotImplementedError("Network calculation not yet implemented.")
-    return
-
-class CalcNode:
-  def __init__(self,node_id,expression):
-    """A node in a calculation network.
-
-    A calculation node is defined by an expression that can be evaluated to produce a value.
-    TODO: expressions are currently in python syntax, but this will change.
-    TODO: the only variables currently allowed in an expression are single uppercase letters, but this will change.
-
-    Attributes:
-
-      - node_id = ID string for this node
-      - expression = calculation expression for this node
-      - value = result of the expression evaluation (None if not yet evaluated)
-      - reverse_deps = list of nodes that this node depends on.
-      - forward_deps = list of nodes that depend on this node"""
-    self.node_id=node_id
-    self.expression=expression
-    self.value=None
-    self.forward_deps=[]
-    self.reverse_deps=[]
-    return
-  def process_expression(self):
-    """Read the expression to obtain the reverse dependencies
-
-    TODO: compile the expression (not currently applicable)
-
-    Returns:
-
-      - reverse_deps = list of node ids for the reverse dependencies"""
-    ##TODO: just use whitespace now
-    parsed_expression=self.expression.split()
-    #Get the new list of dependencies
-    ##TODO: only allow single uppercase letters for now
-    candidates=[token for token in parsed_expression if len(token)==1]
-    new_deps=[token for token in candidates if ord(token)>=65 and ord(token)<=90]
-    #Sort for later efficiency
-    new_deps.sort()
-    #Remove duplications so items are unique
-    reverse_deps=get_uniques(new_deps)
-    #Compile the expression
-    ##TODO: no compiled form for now
-    return reverse_deps
-  def evaluate(self):
-    """Evaluate the expression
-    
-    ##TODO: this uses python ``eval`` for now"""
-    ##TODO: get the necessary variables into a dictionary
-    ##parameters={}
-    ##for k in self.reverse_deps:
-    ##TODO
-    ##self.value=eval(self._expression,parameters)
-    raise NotImplementedError("Evaluation not yet implemented.")
     return
