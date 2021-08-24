@@ -164,6 +164,20 @@ class CalcNode:
     raise NotImplementedError("Evaluation not yet implemented.")
     return
 
+class NonEvalNode:
+  """A node without an expression, used only for the dependency graph
+
+  Attributes:
+
+    - node_id = ID for this node, which may not be a string
+    - reverse_deps = list of nodes that this node depends on.
+    - forward_deps = list of nodes that depend on this node"""
+  def __init__(self,node_id):
+    self.node_id=node_id
+    self.forward_deps=[]
+    self.reverse_deps=[]
+    return
+
 class CalcNet:
   """A calculation network
   
@@ -185,15 +199,15 @@ class CalcNet:
     #Initialize adjacency dictionary
     self.adjacency={}
     #Set up the root node
-    ##TODO
-    ##self.root_node=
-    #The "node id" for the root node is `None`.
-    # None is not a valid identifier, so there is no chance of a conflict with a user-defined identifier,
-    # and this allows the default behavior of `recalculate_from` and related functions
-    ##self.adjacency[None]=self.root_node
+    # The "node id" for the root node is ``None``.
+    # This prevents conflict with a user-defined identifier,
+    # and allows the default behavior of ``recalculate_from`` and related functions
+    self.root_node=NonEvalNode(None)
+    self.adjacency[None]=self.root_node
     #Set up the end node?
+    # What is the "node id" for the end node? True?
     ##TODO
-    ##self.end_node=
+    ##self.end_node=NonEvalNode(True)
     return
   def add_node(self,node_id,expression):
     """Add a node to the calculation network
@@ -225,8 +239,8 @@ class CalcNet:
     >>> net=CalcNet(auto_recalc=False)
     >>> net.add_node("X","10")
     >>> net.remove_node("X")
-    >>> net.adjacency
-    {}
+    >>> "X" in net.adjacency.keys()
+    False
 
     Only nodes that no other nodes depend on can be removed.
 
@@ -255,10 +269,17 @@ class CalcNet:
     ['A', 'B', 'C']
     >>> net.adjacency["A"].forward_deps
     ['D']
+
+    Nodes that have no reverse dependencies will connect back to the root node.
+
+    >>> net.adjacency["A"].reverse_deps
+    [None]
     
     """
     #Get the list of reverse dependencies
     reverse_deps=self.adjacency[node_id].process_expression()
+    if len(reverse_deps)==0:
+      reverse_deps=[None] #If no dependencies, link to the root node
     #Confirm that all the reverse dependencies are valid
     invalid_deps=[d for d in reverse_deps if d not in self.adjacency.keys()]
     assert len(invalid_deps)==0, "Invalid identifiers in expression for {}: {}".format(node_id,str(invalid_deps))
