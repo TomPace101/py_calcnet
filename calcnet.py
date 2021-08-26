@@ -123,13 +123,16 @@ class CalcNode:
     - expression = calculation expression for this node
     - value = result of the expression evaluation (None if not yet evaluated)
     - reverse_deps = list of nodes that this node depends on.
-    - forward_deps = list of nodes that depend on this node"""
+    - forward_deps = list of nodes that depend on this node
+    - unsatisfied = list of unsatisfied reverse dependencies
+      (This is set up and then used destructively during calculation order updates.)"""
   def __init__(self,node_id,expression):
     self.node_id=node_id
     self.expression=expression
     self.value=None
     self.forward_deps=[]
     self.reverse_deps=[]
+    self.unsatisfied=[]
     return
   def process_expression(self):
     """Read the expression to obtain the reverse dependencies
@@ -304,10 +307,19 @@ class CalcNet:
     """Perform a recalculation of the network starting from the given node ID.
 
     If no node ID is given, a recalculation of the entire network is performed"""
-    #Update the evalulation order
+    #Trace the unsatisfied dependencies
+    self._trace_unsatisfied(node_id)
+    #Update the evaluation order
     self._update_evaluation_order_from(node_id)
     #Do the evaluations
     self._evaluate_from(node_id)
+    return
+  def _trace_unsatisfied(self,node_id=None):
+    """Trace the unsatisfied dependencies in all descendants of the given node.
+
+    If no node ID is given, all reverse dependencies are listed as unsatisfied."""
+    ##TODO
+    raise NotImplementedError("Unsatisfied dependency tracing not yet implemented")
     return
   def _update_evaluation_order_from(self,node_id=None):
     """Update the evaluation order, starting from the given node.
