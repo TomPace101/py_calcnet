@@ -110,29 +110,38 @@ def get_differences(list_a,list_b):
     not_in_a += list_b[idx_b:]
   return not_in_a, not_in_b
 
-class CalcNode:
+class BaseNode:
+  """A node without an expression, used only for the dependency graph
+
+  Attributes:
+
+    - node_id = ID for this node, which may not be a string
+    - reverse_deps = list of nodes that this node depends on
+    - forward_deps = list of nodes that depend on this node
+    - unsatisfied = list of unsatisfied reverse dependencies
+      (This is set up and then used destructively during calculation order updates.)"""
+  def __init__(self,node_id):
+    self.node_id=node_id
+    self.forward_deps=[]
+    self.reverse_deps=[]
+    self.unsatisfied=[]
+    return
+
+class CalcNode(BaseNode):
   """A node in a calculation network.
 
   A calculation node is defined by an expression that can be evaluated to produce a value.
   TODO: expressions are currently in python syntax, but this will change.
   TODO: the only variables currently allowed in an expression are single uppercase letters, but this will change.
 
-  Attributes:
+  Attributes in addition to BaseNode:
 
-    - node_id = ID string for this node
     - expression = calculation expression for this node
-    - value = result of the expression evaluation (None if not yet evaluated)
-    - reverse_deps = list of nodes that this node depends on.
-    - forward_deps = list of nodes that depend on this node
-    - unsatisfied = list of unsatisfied reverse dependencies
-      (This is set up and then used destructively during calculation order updates.)"""
+    - value = result of the expression evaluation (None if not yet evaluated)"""
   def __init__(self,node_id,expression):
-    self.node_id=node_id
+    super().__init__(node_id)
     self.expression=expression
     self.value=None
-    self.forward_deps=[]
-    self.reverse_deps=[]
-    self.unsatisfied=[]
     return
   def process_expression(self):
     """Read the expression to obtain the reverse dependencies
@@ -167,20 +176,6 @@ class CalcNode:
     raise NotImplementedError("Evaluation not yet implemented.")
     return
 
-class NonEvalNode:
-  """A node without an expression, used only for the dependency graph
-
-  Attributes:
-
-    - node_id = ID for this node, which may not be a string
-    - reverse_deps = list of nodes that this node depends on.
-    - forward_deps = list of nodes that depend on this node"""
-  def __init__(self,node_id):
-    self.node_id=node_id
-    self.forward_deps=[]
-    self.reverse_deps=[]
-    return
-
 class CalcNet:
   """A calculation network
   
@@ -205,12 +200,12 @@ class CalcNet:
     # The "node id" for the root node is ``None``.
     # This prevents conflict with a user-defined identifier,
     # and allows the default behavior of ``recalculate_from`` and related functions
-    self.root_node=NonEvalNode(None)
+    self.root_node=BaseNode(None)
     self.adjacency[None]=self.root_node
     #Set up the end node?
     # What is the "node id" for the end node? True?
     ##TODO
-    ##self.end_node=NonEvalNode(True)
+    ##self.end_node=BaseNode(True)
     return
   def add_node(self,node_id,expression):
     """Add a node to the calculation network
