@@ -4,6 +4,9 @@ For now, test with:
 ``python -m doctest calcnet.py``
 """
 
+#Stanard library imports
+import collections
+
 def is_sorted(seq):
   """Return True if the sequence is properly sorted
 
@@ -312,9 +315,53 @@ class CalcNet:
   def _trace_unsatisfied(self,node_id=None):
     """Trace the unsatisfied dependencies in all descendants of the given node.
 
-    If no node ID is given, all reverse dependencies are listed as unsatisfied."""
-    ##TODO
-    raise NotImplementedError("Unsatisfied dependency tracing not yet implemented")
+    >>> net=CalcNet(auto_recalc=False)
+    >>> net.add_node("A","5")
+    >>> net.add_node("B","A + 1")
+    >>> net.add_node("C","A + B")
+    >>> net.add_node("D","A + B + C")
+    >>> net._trace_unsatisfied("B")
+    >>> net.adjacency["D"].unsatisfied
+    ['B', 'C']
+
+    If no node ID is given, all reverse dependencies are listed as unsatisfied.
+    
+    >>> net=CalcNet(auto_recalc=False)
+    >>> net.add_node("M","10")
+    >>> net.add_node("N","20")
+    >>> net.add_node("P","2 * M")
+    >>> net.add_node("Q","3 * N")
+    >>> net.add_node("R","N / M")
+    >>> net.add_node("X","P + Q")
+    >>> net.add_node("Y","Q + R")
+    >>> net.add_node("Z","N + Q")
+    >>> net._trace_unsatisfied()
+    >>> net.adjacency["P"].unsatisfied
+    ['M']
+    >>> net.adjacency["Q"].unsatisfied
+    ['N']
+    >>> net.adjacency["X"].unsatisfied.sort() #just for presentation; order doesn't matter internally
+    >>> net.adjacency["X"].unsatisfied
+    ['P', 'Q']
+    >>> net.adjacency["Z"].unsatisfied.sort() #just for presentation ...
+    >>> net.adjacency["Z"].unsatisfied
+    ['N', 'Q']
+    """
+    #Seed the queue of nodes with the specified node.
+    queue=collections.deque([node_id])
+    #Traverse the graph (breadth-first) until the queue of nodes is empty
+    while len(queue)>0:
+      #Get the next node from the queue
+      parent_id=queue.popleft()
+      #The child nodes are the forward dependencies of the parent
+      children_ids=self.adjacency[parent_id].forward_deps
+      #Skip if there are no children
+      if len(children_ids)>0:
+        #Add the parent node to the unsatisfied dependencies of all its immediate children
+        for child_id in children_ids:
+          self.adjacency[child_id].unsatisfied.append(parent_id)
+        #Add the children to the queue
+        queue.extend(children_ids)
     return
   def _update_evaluation_order_from(self,node_id=None):
     """Update the evaluation order, starting from the given node.
