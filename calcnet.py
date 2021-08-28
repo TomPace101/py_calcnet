@@ -122,12 +122,14 @@ class BaseNode:
     - reverse_deps = list of nodes that this node depends on
     - forward_deps = list of nodes that depend on this node
     - unsatisfied = list of unsatisfied reverse dependencies
-      (This is set up and then used destructively during calculation order updates.)"""
+      (This is set up and then used destructively during calculation order updates.)
+    - up_to_date = boolean, False when the node needs to be re-calculated because of a change"""
   def __init__(self,node_id):
     self.node_id=node_id
     self.forward_deps=[]
     self.reverse_deps=[]
     self.unsatisfied=[]
+    self.up_to_date=False
     return
 
 class CalcNode(BaseNode):
@@ -335,6 +337,9 @@ class CalcNet:
   def _trace_unsatisfied(self,node_id=None):
     """Trace the unsatisfied dependencies in all descendants of the given node.
 
+    Each node, including the start node, is also marked as needing recalculation,
+    by setting the ``up_to_date`` value to False.
+
     >>> net=CalcNet(auto_recalc=False)
     >>> net.add_node("A","5")
     >>> net.add_node("B","A + 1")
@@ -370,6 +375,8 @@ class CalcNet:
     #Traverse descendants starting with the specified node.
     #The order of traversal (breadth-first or depth-first) doesn't matter.
     for parent_id in self.walk(node_id):
+      #Mark the parent as needing update
+      self.adjacency[parent_id].up_to_date=False
       #The child nodes are the forward dependencies of the parent
       #Add the parent node to the unsatisfied dependencies of all its immediate children
       for child_id in self.adjacency[parent_id].forward_deps:
