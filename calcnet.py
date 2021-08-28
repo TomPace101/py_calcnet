@@ -193,7 +193,8 @@ class CalcNet:
     - end_node = the end node of the calculation network
         The forward dependencies of all nodes eventually lead up to this one,
         and it has no forward dependencies of its own.
-        This node has no dictionary entry."""
+        This node has no dictionary entry.
+    - ordering = the calculation order as a sequence of stages, each stage a group of nodes"""
   def __init__(self,auto_recalc=True):
     #Set the level of automation
     self.auto_recalc=auto_recalc
