@@ -190,10 +190,6 @@ class CalcNet:
         The reverse dependencies of all nodes eventually lead back to this one,
         and it has no reverse dependencies of its own.
         This node's dictionary entry is ``None``.
-    - end_node = the end node of the calculation network
-        The forward dependencies of all nodes eventually lead up to this one,
-        and it has no forward dependencies of its own.
-        This node has no dictionary entry.
     - ordering = the calculation order as a sequence of stages, each stage a group of nodes"""
   def __init__(self,auto_recalc=True):
     #Set the level of automation
@@ -206,10 +202,8 @@ class CalcNet:
     # and allows the default behavior of ``recalculate_from`` and related functions
     self.root_node=BaseNode(None)
     self.adjacency[None]=self.root_node
-    #Set up the end node?
-    # What is the "node id" for the end node? True?
-    ##TODO
-    ##self.end_node=BaseNode(True)
+    #Set up the ordering
+    self.ordering=[]
     return
   def add_node(self,node_id,expression):
     """Add a node to the calculation network
@@ -259,6 +253,31 @@ class CalcNet:
     #Remove the node from the adjacency list
     self.adjacency.pop(node_id)
     return
+  def walk(self,node_id=None,breadth_first=True):
+    """Generator for iterating over all nodes descending from the given starting node.
+
+    Arguments:
+
+      - node_id = optional starting node ID.
+        If not given, the root node is used.
+      - breadth_first = boolean, True for breadth-first traversal, False for depth-first
+
+    Yields node IDs for the adjacency dictionary.
+
+    """
+    #Seed the queue of nodes with the specified node.
+    queue=collections.deque([node_id])
+    #Traverse the graph (breadth-first) until the queue of nodes is empty
+    while len(queue)>0:
+      #Get the next node from the queue
+      if breadth_first:
+        nd = queue.popleft()
+      else:
+        nd = queue.pop()
+      #Yield this node
+      yield nd
+      #Add the forward dependencies to the queue
+      queue.extend(self.adjacency[nd].forward_deps)
   def update_adjacencies(self,node_id):
     """Update the reverse and forward dependencies from a single node
     
@@ -348,21 +367,13 @@ class CalcNet:
     >>> net.adjacency["Z"].unsatisfied
     ['N', 'Q']
     """
-    #Seed the queue of nodes with the specified node.
-    queue=collections.deque([node_id])
-    #Traverse the graph (breadth-first) until the queue of nodes is empty
-    while len(queue)>0:
-      #Get the next node from the queue
-      parent_id=queue.popleft()
+    #Traverse descendants starting with the specified node.
+    #The order of traversal (breadth-first or depth-first) doesn't matter.
+    for parent_id in self.walk(node_id):
       #The child nodes are the forward dependencies of the parent
-      children_ids=self.adjacency[parent_id].forward_deps
-      #Skip if there are no children
-      if len(children_ids)>0:
-        #Add the parent node to the unsatisfied dependencies of all its immediate children
-        for child_id in children_ids:
-          self.adjacency[child_id].unsatisfied.append(parent_id)
-        #Add the children to the queue
-        queue.extend(children_ids)
+      #Add the parent node to the unsatisfied dependencies of all its immediate children
+      for child_id in self.adjacency[parent_id].forward_deps:
+        self.adjacency[child_id].unsatisfied.append(parent_id)
     return
   def _update_evaluation_order_from(self,node_id=None):
     """Update the evaluation order, starting from the given node.
