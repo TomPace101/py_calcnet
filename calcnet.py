@@ -361,6 +361,8 @@ class CalcNet:
     >>> net.add_node("Y","Q + R")
     >>> net.add_node("Z","N + Q")
     >>> net._trace_unsatisfied()
+    >>> net.adjacency["M"].unsatisfied
+    [None]
     >>> net.adjacency["P"].unsatisfied
     ['M']
     >>> net.adjacency["Q"].unsatisfied
@@ -382,6 +384,68 @@ class CalcNet:
       for child_id in self.adjacency[parent_id].forward_deps:
         self.adjacency[child_id].unsatisfied.append(parent_id)
     return
+  def _set_order(self):
+    """Set up the evaluation order for all nodes
+
+    TODO: ultimately, we need an incremental way of doing this
+    
+    >>> net=CalcNet(auto_recalc=False)
+    >>> net.add_node("F","6")
+    >>> net.add_node("G","7")
+    >>> net.add_node("H","8")
+    >>> net.add_node("I","9")
+    >>> net.add_node("J","10")
+    >>> net.add_node("C","F + I - 12")
+    >>> net.add_node("D","H - 4")
+    >>> net.add_node("E","J - 5")
+    >>> net.add_node("B","D + F - J + 2")
+    >>> net.add_node("A","B + C - E + G - 6")
+    >>> net._trace_unsatisfied()
+    >>> net._set_order()
+    >>> o=[stage.sort() for stage in net.ordering]
+    >>> net.ordering[0]
+    [None]
+    >>> net.ordering[1]
+    ['F', 'G', 'H', 'I', 'J']
+    >>> net.ordering[2]
+    ['C', 'D', 'E']
+    >>> net.ordering[3]
+    ['B']
+    >>> net.ordering[4]
+    ['A']
+    """
+    #Initialization
+    self.ordering=[]
+    parent_id=None
+    prev_stage=[parent_id]
+    #Loop until the previous stage was empty
+    while len(prev_stage)>0:
+      #Add the previous stage to the ordering
+      self.ordering.append(prev_stage)
+      #Prepare a new stage
+      stage=[]
+      #Go through the nodes added in the previous stage
+      for parent_id in prev_stage:
+        #For each child node (each forward dependency)
+        children_ids=self.adjacency[parent_id].forward_deps
+        for child_id in children_ids:
+          child=self.adjacency[child_id]
+          #Remove the parent from the child's unsatisfied dependency list
+          child.unsatisfied=[nd for nd in child.unsatisfied if not nd == parent_id]
+          #If the child now has no unsatisfied dependencies, it is part of the next stage.
+          if len(child.unsatisfied) == 0:
+            stage.append(child_id)
+      #Prepare for next stage
+      prev_stage=stage
+    #Check all nodes to confirm that no unsatisfied dependencies remain
+    still_unsat=[nd for nd in self.adjacency.keys() if len(self.adjacency[nd].unsatisfied)>0]
+    if len(still_unsat)>0:
+      err_msg="Failed to determine ordering. Possible cycle:"
+      for nd in still_unsat:
+        err_msg.append("\n{}: {}".format(nd,self.adjacency[nd].unsatisfied))
+      raise Exception(err_msg)
+    #Done
+    return
   def _update_evaluation_order_from(self,node_id=None):
     """Update the evaluation order, starting from the given node.
 
@@ -398,5 +462,6 @@ class CalcNet:
     If no node ID is given, all nodes are evaluated."""
     start_node = self.adjacency[node_id]
     ##TODO
+    ##TODO: be sure not to try to evaluate the root node (or, abandon having two classes and do a quick no-op for the root instead)
     raise NotImplementedError("Network calculation not yet implemented.")
     return
