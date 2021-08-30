@@ -458,6 +458,10 @@ class CalcNet:
     ['B']
     >>> net.ordering[4]
     ['A']
+
+    If the network contains a cycle, the attempt to order will fail.
+
+    TODO: example with a cycle
     """
     #Initialization
     self.ordering=[]
