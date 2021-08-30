@@ -209,6 +209,28 @@ class CalcNet:
     #Set up the ordering
     self.ordering=[]
     return
+  def count(self):
+    """Return a count of the number of nodes and the number of edges
+
+    This will include the root node in the count of nodes,
+    and its forward dependencies in the count of edges.
+
+    Returns:
+
+      - nodes = integer number of nodes
+      - edges = integer number of edges
+
+    >>> net = CalcNet(auto_recalc=False)
+    >>> net.add_node("A","100")
+    >>> net.add_node("B","A - 100")
+    >>> net.add_node("C","A + B")
+    >>> net.count()
+    (4, 4)"""
+    nodes=len(self.adjacency.keys())
+    edges=0
+    for node in self.adjacency.values():
+      edges += len(node.forward_deps)
+    return nodes, edges
   def add_node(self,node_id,expression):
     """Add a node to the calculation network
     
