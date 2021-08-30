@@ -279,8 +279,10 @@ class CalcNet:
     >>> net.add_node("E","J - 5")
     >>> net.add_node("B","D + F - J + 2")
     >>> net.add_node("A","B + C - E + G - 6")
-    >>> [nd for nd in net.walk()]
-    [None, 'F', 'G', 'H', 'I', 'J', 'B', 'C', 'A', 'D', 'E']
+    >>> len([nd for nd in net.walk()])
+    11
+    >>> len([nd for nd in net.walk(breadth_first=False)])
+    11
 
     """
     #Mark all nodes as undiscovered
