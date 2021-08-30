@@ -121,15 +121,17 @@ class BaseNode:
     - node_id = ID for this node, which may not be a string
     - reverse_deps = list of nodes that this node depends on
     - forward_deps = list of nodes that depend on this node
-    - unsatisfied = list of unsatisfied reverse dependencies
+    - unsatisfied = integer number of unsatisfied reverse dependencies
       (This is set up and then used destructively during calculation order updates.)
-    - up_to_date = boolean, False when the node needs to be re-calculated because of a change"""
+    - up_to_date = boolean, False when the node needs to be re-calculated because of a change
+    - discovered = boolean, True when previously discovered in a walk of the graph"""
   def __init__(self,node_id):
     self.node_id=node_id
     self.forward_deps=[]
     self.reverse_deps=[]
-    self.unsatisfied=[]
+    self.unsatisfied=0
     self.up_to_date=False
+    self.discovered=False
     return
 
 class CalcNode(BaseNode):
@@ -266,7 +268,24 @@ class CalcNet:
 
     Yields node IDs for the adjacency dictionary.
 
+    >>> net=CalcNet(auto_recalc=False)
+    >>> net.add_node("F","6")
+    >>> net.add_node("G","7")
+    >>> net.add_node("H","8")
+    >>> net.add_node("I","9")
+    >>> net.add_node("J","10")
+    >>> net.add_node("C","F + I - 12")
+    >>> net.add_node("D","H - 4")
+    >>> net.add_node("E","J - 5")
+    >>> net.add_node("B","D + F - J + 2")
+    >>> net.add_node("A","B + C - E + G - 6")
+    >>> [nd for nd in net.walk()]
+    [None, 'F', 'G', 'H', 'I', 'J', 'B', 'C', 'A', 'D', 'E']
+
     """
+    #Mark all nodes as undiscovered
+    for nod in self.adjacency.values():
+      nod.discovered=False
     #Seed the queue of nodes with the specified node.
     queue=collections.deque([node_id])
     #Traverse the graph (breadth-first) until the queue of nodes is empty
@@ -278,8 +297,12 @@ class CalcNet:
         nd = queue.pop()
       #Yield this node
       yield nd
-      #Add the forward dependencies to the queue
-      queue.extend(self.adjacency[nd].forward_deps)
+      #Add the undiscovered forward dependencies to the queue
+      undiscovered=[fd for fd in self.adjacency[nd].forward_deps if not self.adjacency[fd].discovered]
+      queue.extend(undiscovered)
+      #Mark the undiscovered nodes as now discovered
+      for child_id in undiscovered:
+        self.adjacency[child_id].discovered = True
   def update_adjacencies(self,node_id):
     """Update the reverse and forward dependencies from a single node
     
@@ -347,7 +370,7 @@ class CalcNet:
     >>> net.add_node("D","A + B + C")
     >>> net._trace_unsatisfied("B")
     >>> net.adjacency["D"].unsatisfied
-    ['B', 'C']
+    2
 
     If no node ID is given, all reverse dependencies are listed as unsatisfied.
     
@@ -362,17 +385,15 @@ class CalcNet:
     >>> net.add_node("Z","N + Q")
     >>> net._trace_unsatisfied()
     >>> net.adjacency["M"].unsatisfied
-    [None]
+    1
     >>> net.adjacency["P"].unsatisfied
-    ['M']
+    1
     >>> net.adjacency["Q"].unsatisfied
-    ['N']
-    >>> net.adjacency["X"].unsatisfied.sort() #just for presentation; order doesn't matter internally
+    1
     >>> net.adjacency["X"].unsatisfied
-    ['P', 'Q']
-    >>> net.adjacency["Z"].unsatisfied.sort() #just for presentation ...
+    2
     >>> net.adjacency["Z"].unsatisfied
-    ['N', 'Q']
+    2
     """
     #Traverse descendants starting with the specified node.
     #The order of traversal (breadth-first or depth-first) doesn't matter.
@@ -382,7 +403,7 @@ class CalcNet:
       #The child nodes are the forward dependencies of the parent
       #Add the parent node to the unsatisfied dependencies of all its immediate children
       for child_id in self.adjacency[parent_id].forward_deps:
-        self.adjacency[child_id].unsatisfied.append(parent_id)
+        self.adjacency[child_id].unsatisfied += 1
     return
   def _set_order(self):
     """Set up the evaluation order for all nodes
@@ -402,7 +423,7 @@ class CalcNet:
     >>> net.add_node("A","B + C - E + G - 6")
     >>> net._trace_unsatisfied()
     >>> net._set_order()
-    >>> o=[stage.sort() for stage in net.ordering]
+    >>> o=[stage.sort() for stage in net.ordering] #For presentation purposes only
     >>> net.ordering[0]
     [None]
     >>> net.ordering[1]
@@ -429,20 +450,19 @@ class CalcNet:
         #For each child node (each forward dependency)
         children_ids=self.adjacency[parent_id].forward_deps
         for child_id in children_ids:
-          child=self.adjacency[child_id]
-          #Remove the parent from the child's unsatisfied dependency list
-          child.unsatisfied=[nd for nd in child.unsatisfied if not nd == parent_id]
+          #Remove the parent from the child's unsatisfied dependency count
+          self.adjacency[child_id].unsatisfied -= 1
           #If the child now has no unsatisfied dependencies, it is part of the next stage.
-          if len(child.unsatisfied) == 0:
+          if self.adjacency[child_id].unsatisfied == 0:
             stage.append(child_id)
       #Prepare for next stage
       prev_stage=stage
     #Check all nodes to confirm that no unsatisfied dependencies remain
-    still_unsat=[nd for nd in self.adjacency.keys() if len(self.adjacency[nd].unsatisfied)>0]
+    still_unsat=[nd for nd in self.adjacency.keys() if self.adjacency[nd].unsatisfied>0]
     if len(still_unsat)>0:
       err_msg="Failed to determine ordering. Possible cycle:"
       for nd in still_unsat:
-        err_msg.append("\n{}: {}".format(nd,self.adjacency[nd].unsatisfied))
+        err_msg += "\n{}: {}".format(nd,self.adjacency[nd].unsatisfied)
       raise Exception(err_msg)
     #Done
     return
