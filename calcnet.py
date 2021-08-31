@@ -177,6 +177,8 @@ class CalcNode:
       ##for k in self.reverse_deps:
       ##TODO
       ##self.value=eval(self._expression,parameters)
+      #Value has now been updated
+      ##self.up_to_date = True
       raise NotImplementedError("Evaluation not yet implemented.")
     return
 
