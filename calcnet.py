@@ -113,8 +113,12 @@ def get_differences(list_a,list_b):
     not_in_a += list_b[idx_b:]
   return not_in_a, not_in_b
 
-class BaseNode:
-  """A node without an expression, used only for the dependency graph
+class CalcNode:
+  """A node in a calculation network.
+
+  A calculation node is defined by an expression that can be evaluated to produce a value.
+  TODO: expressions are currently in python syntax, but this will change.
+  TODO: the only variables currently allowed in an expression are single uppercase letters, but this will change.
 
   Attributes:
 
@@ -124,29 +128,16 @@ class BaseNode:
     - unsatisfied = integer number of unsatisfied reverse dependencies
       (This is set up and then used destructively during calculation order updates.)
     - up_to_date = boolean, False when the node needs to be re-calculated because of a change
-    - discovered = boolean, True when previously discovered in a walk of the graph"""
-  def __init__(self,node_id):
+    - discovered = boolean, True when previously discovered in a walk of the graph
+    - expression = calculation expression for this node
+    - value = result of the expression evaluation (None if not yet evaluated)"""
+  def __init__(self,node_id,expression):
     self.node_id=node_id
     self.forward_deps=[]
     self.reverse_deps=[]
     self.unsatisfied=0
     self.up_to_date=False
     self.discovered=False
-    return
-
-class CalcNode(BaseNode):
-  """A node in a calculation network.
-
-  A calculation node is defined by an expression that can be evaluated to produce a value.
-  TODO: expressions are currently in python syntax, but this will change.
-  TODO: the only variables currently allowed in an expression are single uppercase letters, but this will change.
-
-  Attributes in addition to BaseNode:
-
-    - expression = calculation expression for this node
-    - value = result of the expression evaluation (None if not yet evaluated)"""
-  def __init__(self,node_id,expression):
-    super().__init__(node_id)
     self.expression=expression
     self.value=None
     return
@@ -173,14 +164,20 @@ class CalcNode(BaseNode):
     return reverse_deps
   def evaluate(self):
     """Evaluate the expression
+
+    The result is not returned, but is stored in self.value
     
     ##TODO: this uses python ``eval`` for now"""
-    ##TODO: get the necessary variables into a dictionary
-    ##parameters={}
-    ##for k in self.reverse_deps:
-    ##TODO
-    ##self.value=eval(self._expression,parameters)
-    raise NotImplementedError("Evaluation not yet implemented.")
+    #Check for an empty formula
+    if len(self.expression) == 0:
+      self.value=None
+    else:
+      ##TODO: get the necessary variables into a dictionary
+      ##parameters={}
+      ##for k in self.reverse_deps:
+      ##TODO
+      ##self.value=eval(self._expression,parameters)
+      raise NotImplementedError("Evaluation not yet implemented.")
     return
 
 class CalcNet:
@@ -204,7 +201,7 @@ class CalcNet:
     # The "node id" for the root node is ``None``.
     # This prevents conflict with a user-defined identifier,
     # and allows the default behavior of ``recalculate_from`` and related functions
-    self.root_node=BaseNode(None)
+    self.root_node=CalcNode(None,"")
     self.adjacency[None]=self.root_node
     #Set up the ordering
     self.ordering=[]
