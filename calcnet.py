@@ -335,12 +335,12 @@ class CalcNet:
     The stages of the reverse dependencies are used for this calculation.
     If those stages are not already up-to-date, the stage returned here will be wrong."""
     return 1 + max([self.adjacency[nd].stage for nd in self.adjacency[node_id].reverse_deps])
-  def walk(self,node_id=None,breadth_first=True):
+  def walk(self,start_node_id=None,breadth_first=True):
     """Generator for iterating over all nodes descending from the given starting node.
 
     Arguments:
 
-      - node_id = optional starting node ID.
+      - start_node_id = optional starting node ID.
         If not given, the root node is used.
       - breadth_first = boolean, True for breadth-first traversal, False for depth-first
 
@@ -364,21 +364,21 @@ class CalcNet:
 
     """
     #Mark all nodes as undiscovered
-    for nod in self.adjacency.values():
-      nod.discovered=False
+    for node_id in self.adjacency.values():
+      node_id.discovered=False
     #Seed the queue of nodes with the specified node.
-    queue=collections.deque([node_id])
+    queue=collections.deque([start_node_id])
     #Traverse the graph (breadth-first) until the queue of nodes is empty
     while len(queue)>0:
       #Get the next node from the queue
       if breadth_first:
-        nd = queue.popleft()
+        node_id = queue.popleft()
       else:
-        nd = queue.pop()
+        node_id = queue.pop()
       #Yield this node
-      yield nd
+      yield node_id
       #Add the undiscovered forward dependencies to the queue
-      undiscovered=[fd for fd in self.adjacency[nd].forward_deps if not self.adjacency[fd].discovered]
+      undiscovered=[fd for fd in self.adjacency[node_id].forward_deps if not self.adjacency[fd].discovered]
       queue.extend(undiscovered)
       #Mark the undiscovered nodes as now discovered
       for child_id in undiscovered:
