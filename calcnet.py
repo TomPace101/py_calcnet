@@ -426,18 +426,18 @@ class CalcNet:
       #No need to re-sort because we're removing an item from a sorted list
     #Done
     return
-  def recalculate_from(self,node_id=None):
+  def recalculate_from(self,start_node_id=None):
     """Perform a recalculation of the network starting from the given node ID.
 
     If no node ID is given, a recalculation of the entire network is performed"""
     #Trace the unsatisfied dependencies
-    self._trace_unsatisfied(node_id)
+    self._trace_unsatisfied(start_node_id)
     #Update the evaluation order
-    self._update_evaluation_order_from(node_id)
+    self._update_evaluation_order_from(start_node_id)
     #Do the evaluations
-    self._evaluate_from(node_id)
+    self._evaluate_from(start_node_id)
     return
-  def _trace_unsatisfied(self,node_id=None):
+  def _trace_unsatisfied(self,start_node_id=None):
     """Trace the unsatisfied dependencies in all descendants of the given node.
 
     Each node, including the start node, is also marked as needing recalculation,
@@ -477,7 +477,7 @@ class CalcNet:
     """
     #Traverse descendants starting with the specified node.
     #The order of traversal (breadth-first or depth-first) doesn't matter.
-    for parent_id in self.walk(node_id):
+    for parent_id in self.walk(start_node_id):
       #Mark the parent as needing update
       self.adjacency[parent_id].up_to_date=False
       #The child nodes are the forward dependencies of the parent
@@ -557,26 +557,26 @@ class CalcNet:
       raise Exception(err_msg)
     #Step 2: store the ordering structure needed for calculation execution
     self.ordering=[[] for i in range(stage)]
-    for nd,nod in self.adjacency.items():
-      self.ordering[nod.stage].append(nd)
+    for node_id,node in self.adjacency.items():
+      self.ordering[node.stage].append(node_id)
     self.num_stages=stage
     #Done
     return
-  def _update_evaluation_order_from(self,node_id=None):
+  def _update_evaluation_order_from(self,start_node_id=None):
     """Update the evaluation order, starting from the given node.
 
     If no node ID is given, the evaluation order for the entire network is updated."""
     #Get the requested starting node
-    start_node = self.adjacency[node_id]
+    start_node = self.adjacency[start_node_id]
     ##TODO
     raise NotImplementedError("Evaluation order update not yet implemented.")
     return
-  def _evaluate_from(self,node_id=None):
+  def _evaluate_from(self,start_node_id=None):
     """Perform an evaluation of the nodes, starting from the given node
     
     Assumes the evaluation order is already up-to-date.
     If no node ID is given, all nodes are evaluated."""
-    start_node = self.adjacency[node_id]
+    start_node = self.adjacency[start_node_id]
     ##TODO
     ##TODO: be sure not to try to evaluate the root node (or, abandon having two classes and do a quick no-op for the root instead)
     raise NotImplementedError("Network calculation not yet implemented.")
