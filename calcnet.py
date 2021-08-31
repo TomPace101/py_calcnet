@@ -130,7 +130,8 @@ class CalcNode:
     - up_to_date = boolean, False when the node needs to be re-calculated because of a change
     - discovered = boolean, True when previously discovered in a walk of the graph
     - expression = calculation expression for this node
-    - value = result of the expression evaluation (None if not yet evaluated)"""
+    - value = result of the expression evaluation (None if not yet evaluated)
+    - stage = integer identifying the calculation stage to which the node belongs"""
   def __init__(self,node_id,expression):
     self.node_id=node_id
     self.forward_deps=[]
@@ -138,6 +139,7 @@ class CalcNode:
     self.unsatisfied=0
     self.up_to_date=False
     self.discovered=False
+    self.stage=None
     self.expression=expression
     self.value=None
     return
@@ -193,7 +195,8 @@ class CalcNet:
         The reverse dependencies of all nodes eventually lead back to this one,
         and it has no reverse dependencies of its own.
         This node's dictionary entry is ``None``.
-    - ordering = the calculation order as a sequence of stages, each stage a group of nodes"""
+    - ordering = the calculation order as a sequence of stages, each stage a group of nodes
+    - num_stages = the total number of calculation stages"""
   def __init__(self,auto_recalc=True):
     #Set the level of automation
     self.auto_recalc=auto_recalc
@@ -206,7 +209,9 @@ class CalcNet:
     self.root_node=CalcNode(None,"")
     self.adjacency[None]=self.root_node
     #Set up the ordering
-    self.ordering=[]
+    self.root_node.stage=0
+    self.ordering=[[None]]
+    self.num_stages=0
     return
   @classmethod
   def load(cls,fpath):
@@ -481,21 +486,27 @@ class CalcNet:
     ['B']
     >>> net.ordering[4]
     ['A']
+    >>> net.adjacency["A"].stage
+    4
+    >>> net.num_stages
+    5
 
     If the network contains a cycle, the attempt to order will fail.
 
     TODO: example with a cycle
     """
+    #Step 1: label each node with a stage number
     #Initialization
-    self.ordering=[]
     parent_id=None
     prev_stage=[parent_id]
+    stage=0
     #Loop until the previous stage was empty
     while len(prev_stage)>0:
-      #Add the previous stage to the ordering
-      self.ordering.append(prev_stage)
+      # #Add the previous stage to the ordering
+      # self.ordering.append(prev_stage)
       #Prepare a new stage
-      stage=[]
+      stage += 1
+      next_stage=[]
       #Go through the nodes added in the previous stage
       for parent_id in prev_stage:
         #For each child node (each forward dependency)
@@ -505,9 +516,10 @@ class CalcNet:
           self.adjacency[child_id].unsatisfied -= 1
           #If the child now has no unsatisfied dependencies, it is part of the next stage.
           if self.adjacency[child_id].unsatisfied == 0:
-            stage.append(child_id)
+            next_stage.append(child_id)
+            self.adjacency[child_id].stage = stage
       #Prepare for next stage
-      prev_stage=stage
+      prev_stage=next_stage
     #Check all nodes to confirm that no unsatisfied dependencies remain
     still_unsat=[nd for nd in self.adjacency.keys() if self.adjacency[nd].unsatisfied>0]
     if len(still_unsat)>0:
@@ -515,6 +527,11 @@ class CalcNet:
       for nd in still_unsat:
         err_msg += "\n{}: {}".format(nd,self.adjacency[nd].unsatisfied)
       raise Exception(err_msg)
+    #Step 2: store the ordering structure needed for calculation execution
+    self.ordering=[[] for i in range(stage)]
+    for nd,nod in self.adjacency.items():
+      self.ordering[nod.stage].append(nd)
+    self.num_stages=stage
     #Done
     return
   def _update_evaluation_order_from(self,node_id=None):
