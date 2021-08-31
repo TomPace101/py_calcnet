@@ -282,7 +282,7 @@ class CalcNet:
     self.adjacency[node_id]=CalcNode(node_id,expression)
     self.update_adjacencies(node_id)
     #Add to the appropriate calculation stage
-    stage=max([self.adjacency[nd].stage for nd in self.adjacency[node_id].reverse_deps]) + 1
+    stage=self.compute_stage(node_id)
     self.adjacency[node_id].stage = stage
     if stage == self.num_stages:
       #Network needs a new stage
@@ -329,6 +329,12 @@ class CalcNet:
     #Remove the node from the adjacency list
     self.adjacency.pop(node_id)
     return
+  def compute_stage(self,node_id):
+    """Compute the calculation stage number for the specified node
+
+    The stages of the reverse dependencies are used for this calculation.
+    If those stages are not already up-to-date, the stage returned here will be wrong."""
+    return 1 + max([self.adjacency[nd].stage for nd in self.adjacency[node_id].reverse_deps])
   def walk(self,node_id=None,breadth_first=True):
     """Generator for iterating over all nodes descending from the given starting node.
 
