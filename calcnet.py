@@ -206,6 +206,30 @@ class CalcNet:
     #Set up the ordering
     self.ordering=[]
     return
+  @classmethod
+  def load(cls,fpath):
+    """Load a calculation network from a file
+
+    The file should not include the root node.
+
+    Arguments:
+
+      - fpath = path to input file, as a string"""
+    ##TODO: implement
+    raise NotImplementedError("Loading from file not yet supported")
+    net = cls()
+    return net
+  def save(self,fpath):
+    """Write the calculation network to a file
+
+    The output file will not include the root node.
+
+    Arguments:
+
+      - fpath = path to the output file, as a string"""
+    ##TODO: implement
+    raise NotImplementedError("Saving to file not yet supported")
+    return
   def count(self):
     """Return a count of the number of nodes and the number of edges
 
