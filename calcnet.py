@@ -211,7 +211,7 @@ class CalcNet:
     #Set up the ordering
     self.root_node.stage=0
     self.ordering=[[None]]
-    self.num_stages=0
+    self.num_stages=1
     return
   @classmethod
   def load(cls,fpath):
@@ -266,10 +266,30 @@ class CalcNet:
     >>> net.add_node("A","5")
     >>> net.adjacency["A"].expression == "5"
     True
+
+    Ordering is updated incrementally as nodes are added.
+    >>> net.add_node("B","A + 5")
+    >>> net.adjacency["B"].stage
+    2
+    >>> net.add_node("C","B + 5")
+    >>> net.ordering[3]
+    ['C']
+    >>> net.add_node("D","A - 5")
+    >>> net.ordering[2]
+    ['B', 'D']
     
     """
     self.adjacency[node_id]=CalcNode(node_id,expression)
     self.update_adjacencies(node_id)
+    #Add to the appropriate calculation stage
+    stage=max([self.adjacency[nd].stage for nd in self.adjacency[node_id].reverse_deps]) + 1
+    self.adjacency[node_id].stage = stage
+    if stage == self.num_stages:
+      #Network needs a new stage
+      self.ordering.append([node_id])
+      self.num_stages += 1
+    else:
+      self.ordering[stage].append(node_id)
     #Evaluate node if requested
     #(All dependencies have to be satisfied to add a node, so nothing else needs to be updated)
     if self.auto_recalc:
@@ -279,6 +299,8 @@ class CalcNet:
     """Make a change to an existing node"""
     self.adjacency[node_id].expression=expression
     self.update_adjacencies(node_id)
+    #Update the ordering
+    ##TODO
     #Recalculate if requested
     if self.auto_recalc:
       self.recalculate_from(node_id)
