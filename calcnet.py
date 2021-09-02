@@ -488,42 +488,6 @@ class CalcNet:
       for child_id in self.adjacency[parent_id].forward_deps:
         self.adjacency[child_id].unsatisfied += 1
     return
-  def _set_order(self):
-    """Label all nodes with a calculation stage
-
-    TODO: ultimately, we need an incremental way of doing this
-    
-    """
-    #Initialization
-    parent_id=None
-    prev_stage=[parent_id]
-    stage=0
-    #Loop until the previous stage was empty
-    while len(prev_stage)>0:
-      # #Add the previous stage to the ordering
-      # self.ordering.append(prev_stage)
-      #Prepare a new stage
-      stage += 1
-      next_stage=[]
-      #Go through the nodes added in the previous stage
-      for parent_id in prev_stage:
-        #For each child node (each forward dependency)
-        children_ids=self.adjacency[parent_id].forward_deps
-        for child_id in children_ids:
-          #Remove the parent from the child's unsatisfied dependency count
-          self.adjacency[child_id].unsatisfied -= 1
-          #If the child now has no unsatisfied dependencies, it is part of the next stage.
-          if self.adjacency[child_id].unsatisfied == 0:
-            next_stage.append(child_id)
-            self.adjacency[child_id].stage = stage
-      #Prepare for next stage
-      prev_stage=next_stage
-    #Store the total number of stages
-    self.num_stages=stage
-    #Check all nodes to confirm that no unsatisfied dependencies remain
-    self._confirm_all_satisfied()
-    #Done
-    return
   def _confirm_all_satisfied(self):
     """Confirm that no nodes have unsatisfied dependencies remaining"""
     still_unsat=[nd for nd in self.adjacency.keys() if self.adjacency[nd].unsatisfied>0]
