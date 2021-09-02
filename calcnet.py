@@ -368,7 +368,7 @@ class CalcNet:
       node_id.discovered=False
     #Seed the queue of nodes with the specified node.
     queue=collections.deque([start_node_id])
-    #Traverse the graph (breadth-first) until the queue of nodes is empty
+    #Traverse the graph until the queue of nodes is empty
     while len(queue)>0:
       #Get the next node from the queue
       if breadth_first:
@@ -548,15 +548,54 @@ class CalcNet:
             self.adjacency[child_id].stage = stage
       #Prepare for next stage
       prev_stage=next_stage
+    #Store the total number of stages
+    self.num_stages=stage
     #Check all nodes to confirm that no unsatisfied dependencies remain
+    self._confirm_all_satisfied()
+    #Done
+    return
+  def _confirm_all_satisfied(self):
+    """Confirm that no nodes have unsatisfied dependencies remaining"""
     still_unsat=[nd for nd in self.adjacency.keys() if self.adjacency[nd].unsatisfied>0]
     if len(still_unsat)>0:
       err_msg="Failed to determine ordering. Possible cycle:"
       for nd in still_unsat:
         err_msg += "\n{}: {}".format(nd,self.adjacency[nd].unsatisfied)
       raise Exception(err_msg)
-    #Store the total number of stages
-    self.num_stages=stage
+    return
+  def _update_stage_labels(self,start_node_id=None):
+    """Label the specified node and its descendants with a calculation stage
+
+    If no starting node ID is given, the entire network is re-labeled
+    
+    This method assumes that ``_trace_unsatisfied`` has already been called
+    for the same starting node.
+    It's also a good idea to call ``confirm_all_satisfied`` after calling this function``
+    
+    ##TODO: tests"""
+    #Initialization
+    queue=collections.deque([start_node_id])
+    #Loop until the queue is empty
+    while len(queue)>0:
+      #Go through the queue in FIFO order
+      node_id = queue.popleft()
+      #Get the new stage number for the starting node
+      new_stage = self.compute_stage(node_id)
+      #Did the stage change?
+      ##TODO: is there a way to use this information?
+      stage_changed = new_stage == self.adjacency[node_id].stage
+      #Set new stage
+      self.adjacency[node_id].stage = new_stage
+      #Update overall number of stages if needed
+      self.num_stages=max(self.num_stages,new_stage)
+      #For each child node (each forward dependency)
+      children_ids=self.adjacency[node_id].forward_deps
+      for child_id in children_ids:
+        #Remove the parent from the child's unsatisfied dependency count
+        self.adjacency[child_id].unsatisfied -= 1
+        #If the child now has no unsatisfied dependencies, add it to the queue
+        if self.adjacency[child_id].unsatisfied == 0:
+          queue.append(child_id)
     #Done
     return
   def _collect_stages(self):
