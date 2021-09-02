@@ -334,7 +334,10 @@ class CalcNet:
 
     The stages of the reverse dependencies are used for this calculation.
     If those stages are not already up-to-date, the stage returned here will be wrong."""
-    return 1 + max([self.adjacency[nd].stage for nd in self.adjacency[node_id].reverse_deps])
+    if len(self.adjacency[node_id].reverse_deps)==0:
+      return 0
+    else:
+      return 1 + max([self.adjacency[nd].stage for nd in self.adjacency[node_id].reverse_deps])
   def walk(self,start_node_id=None,breadth_first=True):
     """Generator for iterating over all nodes descending from the given starting node.
 
@@ -490,39 +493,6 @@ class CalcNet:
 
     TODO: ultimately, we need an incremental way of doing this
     
-    >>> net=CalcNet(auto_recalc=False)
-    >>> net.add_node("F","6")
-    >>> net.add_node("G","7")
-    >>> net.add_node("H","8")
-    >>> net.add_node("I","9")
-    >>> net.add_node("J","10")
-    >>> net.add_node("C","F + I - 12")
-    >>> net.add_node("D","H - 4")
-    >>> net.add_node("E","J - 5")
-    >>> net.add_node("B","D + F - J + 2")
-    >>> net.add_node("A","B + C - E + G - 6")
-    >>> net._trace_unsatisfied()
-    >>> net._set_order()
-    >>> net._collect_stages()
-    >>> o=[stage.sort() for stage in net.ordering] #For presentation purposes only
-    >>> net.ordering[0]
-    [None]
-    >>> net.ordering[1]
-    ['F', 'G', 'H', 'I', 'J']
-    >>> net.ordering[2]
-    ['C', 'D', 'E']
-    >>> net.ordering[3]
-    ['B']
-    >>> net.ordering[4]
-    ['A']
-    >>> net.adjacency["A"].stage
-    4
-    >>> net.num_stages
-    5
-
-    If the network contains a cycle, the attempt to order will fail.
-
-    TODO: example with a cycle
     """
     #Initialization
     parent_id=None
@@ -570,9 +540,43 @@ class CalcNet:
     
     This method assumes that ``_trace_unsatisfied`` has already been called
     for the same starting node.
-    It's also a good idea to call ``confirm_all_satisfied`` after calling this function``
+    It's also a good idea to call ``_confirm_all_satisfied`` after calling this function``
     
-    ##TODO: tests"""
+    >>> net=CalcNet(auto_recalc=False)
+    >>> net.add_node("F","6")
+    >>> net.add_node("G","7")
+    >>> net.add_node("H","8")
+    >>> net.add_node("I","9")
+    >>> net.add_node("J","10")
+    >>> net.add_node("C","F + I - 12")
+    >>> net.add_node("D","H - 4")
+    >>> net.add_node("E","J - 5")
+    >>> net.add_node("B","D + F - J + 2")
+    >>> net.add_node("A","B + C - E + G - 6")
+    >>> net._trace_unsatisfied()
+    >>> net._update_stage_labels()
+    >>> net._confirm_all_satisfied()
+    >>> net._collect_stages()
+    >>> o=[stage.sort() for stage in net.ordering] #For presentation purposes only
+    >>> net.ordering[0]
+    [None]
+    >>> net.ordering[1]
+    ['F', 'G', 'H', 'I', 'J']
+    >>> net.ordering[2]
+    ['C', 'D', 'E']
+    >>> net.ordering[3]
+    ['B']
+    >>> net.ordering[4]
+    ['A']
+    >>> net.adjacency["A"].stage
+    4
+    >>> net.num_stages
+    5
+
+    If the network contains a cycle, the attempt to order will fail.
+
+    TODO: example with a cycle
+    """
     #Initialization
     queue=collections.deque([start_node_id])
     #Loop until the queue is empty
