@@ -486,7 +486,7 @@ class CalcNet:
         self.adjacency[child_id].unsatisfied += 1
     return
   def _set_order(self):
-    """Set up the evaluation order for all nodes
+    """Label all nodes with a calculation stage
 
     TODO: ultimately, we need an incremental way of doing this
     
@@ -503,6 +503,7 @@ class CalcNet:
     >>> net.add_node("A","B + C - E + G - 6")
     >>> net._trace_unsatisfied()
     >>> net._set_order()
+    >>> net._collect_stages()
     >>> o=[stage.sort() for stage in net.ordering] #For presentation purposes only
     >>> net.ordering[0]
     [None]
@@ -523,7 +524,6 @@ class CalcNet:
 
     TODO: example with a cycle
     """
-    #Step 1: label each node with a stage number
     #Initialization
     parent_id=None
     prev_stage=[parent_id]
@@ -555,12 +555,18 @@ class CalcNet:
       for nd in still_unsat:
         err_msg += "\n{}: {}".format(nd,self.adjacency[nd].unsatisfied)
       raise Exception(err_msg)
-    #Step 2: store the ordering structure needed for calculation execution
-    self.ordering=[[] for i in range(stage)]
-    for node_id,node in self.adjacency.items():
-      self.ordering[node.stage].append(node_id)
+    #Store the total number of stages
     self.num_stages=stage
     #Done
+    return
+  def _collect_stages(self):
+    """Create the calculation order from the stage number of each node.
+    
+    This requires that the nodes already know their own stage numbers,
+    and that the total number of stages is already known."""
+    self.ordering=[[] for i in range(self.num_stages)]
+    for node_id,node in self.adjacency.items():
+      self.ordering[node.stage].append(node_id)
     return
   def _update_evaluation_order_from(self,start_node_id=None):
     """Update the evaluation order, starting from the given node.
