@@ -203,7 +203,7 @@ class CalcNet:
     Arguments:
 
       - auto_recalc = optional boolean for the object's ``auto_recalc`` attribute
-      - exp_dict = optional dictionary of node IDs and expressions to populate the network"""
+      - exp_dict = optional dictionary (potentially ordered) of node IDs and expressions to populate the network"""
     #Set the level of automation
     self.auto_recalc=auto_recalc
     #Initialize adjacency dictionary
@@ -266,27 +266,6 @@ class CalcNet:
     for node in self.adjacency.values():
       edges += len(node.forward_deps)
     return nodes, edges
-  def insert_expressions(self,exp_dict,update_only=False,add_only=False):
-    """Add or update expressions for a group of nodes
-
-    Arguments:
-
-      exp_dict = dictionary {node_id: expression}
-      update_only = boolean, True to raise an error if any node IDs do not already exist
-      add_only = boolean, True to raise an error if any node IDs do already exist
-      
-    If both ``update_only`` and ``add_only`` to True,
-    there will be an exception unless the expression dictionary is completely empty."""
-    for node_id,expression in exp_dict.items():
-      if node_id in self.adjacency.keys():
-        if add_only:
-          raise Exception("Node ID already exists: {}".format(node_id))
-        self.revise_node(node_id,expression)
-      else:
-        if update_only:
-          raise Exception("Node ID does not already exist: {}".format(node_id))
-        self.add_node(node_id,expression)
-    return
   def add_node(self,node_id,expression):
     """Add a node to the calculation network
     
@@ -377,6 +356,30 @@ class CalcNet:
     assert len(fwd) == 0, "Cannot remove {} because other nodes depend on it: {}.".format(node_id, str(fwd))
     #Remove the node from the adjacency list
     self.adjacency.pop(node_id)
+    return
+  def insert_expressions(self,exp_dict,update_only=False,add_only=False):
+    """Add or update expressions for a group of nodes
+
+    Arguments:
+
+      exp_dict = dictionary {node_id: expression}
+      update_only = boolean, True to raise an error if any node IDs do not already exist
+      add_only = boolean, True to raise an error if any node IDs do already exist
+      
+    If both ``update_only`` and ``add_only`` to True,
+    there will be an exception unless the expression dictionary is completely empty.
+    
+    Note that order of addition to the network matters,
+    so an ordered dictionary is generally advised."""
+    for node_id,expression in exp_dict.items():
+      if node_id in self.adjacency.keys():
+        if add_only:
+          raise Exception("Node ID already exists: {}".format(node_id))
+        self.revise_node(node_id,expression)
+      else:
+        if update_only:
+          raise Exception("Node ID does not already exist: {}".format(node_id))
+        self.add_node(node_id,expression)
     return
   def compute_stage(self,node_id):
     """Compute the calculation stage number for the specified node
