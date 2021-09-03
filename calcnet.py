@@ -197,7 +197,13 @@ class CalcNet:
         This node's dictionary entry is ``None``.
     - ordering = the calculation order as a sequence of stages, each stage a group of nodes
     - num_stages = the total number of calculation stages"""
-  def __init__(self,auto_recalc=True):
+  def __init__(self,auto_recalc=True,exp_dict=None):
+    """New calculation network, optionally with initial expressions
+
+    Arguments:
+
+      - auto_recalc = optional boolean for the object's ``auto_recalc`` attribute
+      - exp_dict = optional dictionary of node IDs and expressions to populate the network"""
     #Set the level of automation
     self.auto_recalc=auto_recalc
     #Initialize adjacency dictionary
@@ -212,6 +218,9 @@ class CalcNet:
     self.root_node.stage=0
     self.ordering=[[None]]
     self.num_stages=1
+    #Add any provided nodes
+    if exp_dict is not None:
+      self.insert_expressions(exp_dict)
     return
   @classmethod
   def load(cls,fpath):
@@ -248,10 +257,8 @@ class CalcNet:
       - nodes = integer number of nodes
       - edges = integer number of edges
 
-    >>> net = CalcNet(auto_recalc=False)
-    >>> net.add_node("A","100")
-    >>> net.add_node("B","A - 100")
-    >>> net.add_node("C","A + B")
+    >>> expressions={"A":"100", "B":"A - 100", "C":"A + B"}
+    >>> net = CalcNet(auto_recalc=False,exp_dict=expressions)
     >>> net.count()
     (4, 4)"""
     nodes=len(self.adjacency.keys())
@@ -259,6 +266,27 @@ class CalcNet:
     for node in self.adjacency.values():
       edges += len(node.forward_deps)
     return nodes, edges
+  def insert_expressions(self,exp_dict,update_only=False,add_only=False):
+    """Add or update expressions for a group of nodes
+
+    Arguments:
+
+      exp_dict = dictionary {node_id: expression}
+      update_only = boolean, True to raise an error if any node IDs do not already exist
+      add_only = boolean, True to raise an error if any node IDs do already exist
+      
+    If both ``update_only`` and ``add_only`` to True,
+    there will be an exception unless the expression dictionary is completely empty."""
+    for node_id,expression in exp_dict.items():
+      if node_id in self.adjacency.keys():
+        if add_only:
+          raise Exception("Node ID already exists: {}".format(node_id))
+        self.revise_node(node_id,expression)
+      else:
+        if update_only:
+          raise Exception("Node ID does not already exist: {}".format(node_id))
+        self.add_node(node_id,expression)
+    return
   def add_node(self,node_id,expression):
     """Add a node to the calculation network
     
