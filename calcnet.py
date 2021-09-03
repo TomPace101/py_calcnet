@@ -532,14 +532,9 @@ class CalcNet:
       #Go through the queue in FIFO order
       node_id = queue.popleft()
       #Get the new stage number for the starting node
-      new_stage = self.compute_stage(node_id)
-      #Did the stage change?
-      ##TODO: is there a way to use this information?
-      stage_changed = new_stage == self.adjacency[node_id].stage
-      #Set new stage
-      self.adjacency[node_id].stage = new_stage
+      self.adjacency[node_id].stage = self.compute_stage(node_id)
       #Update overall number of stages if needed
-      self.num_stages=max(self.num_stages,1+new_stage)
+      self.num_stages=max(self.num_stages,1+self.adjacency[node_id].stage)
       #For each child node (each forward dependency)
       children_ids=self.adjacency[node_id].forward_deps
       for child_id in children_ids:
