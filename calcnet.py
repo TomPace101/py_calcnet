@@ -296,11 +296,32 @@ class CalcNet:
       self.adjacency[node_id].evaluate()
     return
   def revise_node(self,node_id,expression):
-    """Make a change to an existing node"""
+    """Make a change to an existing node
+    
+    The calculation order is automatically updated when a node is changed.
+    
+    >>> net=CalcNet(auto_recalc=False)
+    >>> net.add_node("X","10")
+    >>> net.add_node("Y","X + 10")
+    >>> net.add_node("Z","X + 5")
+    >>> net.add_node("A","X + Y + Z")
+    >>> net.adjacency["Z"].stage
+    2
+    >>> net.adjacency["A"].stage
+    3
+    >>> net.revise_node("Z","Y + 10")
+    >>> net.adjacency["Z"].stage
+    3
+    >>> net.adjacency["A"].stage
+    4
+    >>> net.adjacency["Y"].stage
+    2
+
+    """
     self.adjacency[node_id].expression=expression
     self.update_adjacencies(node_id)
     #Update the ordering
-    ##TODO
+    self._update_evaluation_order(node_id)
     #Recalculate if requested
     if self.auto_recalc:
       self.recalculate_from(node_id)
@@ -425,7 +446,7 @@ class CalcNet:
     #Remove deleted dependencies from their forward list
     for dep_id in removed_deps:
       fwd=self.adjacency[dep_id].forward_deps
-      fwd.pop(fwd.index(dep_id))
+      fwd.pop(fwd.index(node_id))
       #No need to re-sort because we're removing an item from a sorted list
     #Done
     return
@@ -518,7 +539,7 @@ class CalcNet:
       #Set new stage
       self.adjacency[node_id].stage = new_stage
       #Update overall number of stages if needed
-      self.num_stages=max(self.num_stages,new_stage)
+      self.num_stages=max(self.num_stages,1+new_stage)
       #For each child node (each forward dependency)
       children_ids=self.adjacency[node_id].forward_deps
       for child_id in children_ids:
