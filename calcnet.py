@@ -164,25 +164,6 @@ class CalcNode:
     #Compile the expression
     ##TODO: no compiled form for now
     return reverse_deps
-  def evaluate(self):
-    """Evaluate the expression
-
-    The result is not returned, but is stored in self.value
-    
-    ##TODO: this uses python ``eval`` for now"""
-    #Check for an empty formula
-    if len(self.expression) == 0:
-      self.value=None
-    else:
-      ##TODO: get the necessary variables into a dictionary
-      ##parameters={}
-      ##for k in self.reverse_deps:
-      ##TODO
-      ##self.value=eval(self._expression,parameters)
-      #Value has now been updated
-      ##self.up_to_date = True
-      raise NotImplementedError("Evaluation not yet implemented.")
-    return
 
 class CalcNet:
   """A calculation network
@@ -637,4 +618,40 @@ class CalcNet:
     ##TODO
     ##TODO: be sure not to try to evaluate the root node (or, abandon having two classes and do a quick no-op for the root instead)
     raise NotImplementedError("Network calculation not yet implemented.")
+    return
+  def evaluate_node(self, node_id):
+    """Evaluate the expression for the specified node
+
+    The result is not returned, but is stored in the ``value`` attribute of the node.
+
+    All reverse dependencies must be evaluated first.
+    
+    ##TODO: this uses python ``eval`` for now
+    
+    >>> net=CalcNet(auto_recalc=False)
+    >>> net.add_node("A","5")
+    >>> net.add_node("B","A + 5")
+    >>> net.evaluate_node("A")
+    >>> net.adjacency["A"].value
+    5
+    >>> net.evaluate_node("B")
+    >>> net.adjacency["B"].value
+    10
+
+    """
+    #Get the node
+    node = self.adjacency[node_id]
+    #Check for an empty formula
+    if len(node.expression) == 0:
+      node.value=None
+    else:
+      #Get the values of all the reverse dependencies that are not the root node
+      value_deps=[d for d in node.reverse_deps if d is not None]
+      parameters={}
+      for dep_id in value_deps:
+        parameters[dep_id] = self.adjacency[dep_id].value
+      #Evaluate
+      node.value=eval(node.expression,parameters)
+      #Value has now been updated
+      node.up_to_date = True
     return
