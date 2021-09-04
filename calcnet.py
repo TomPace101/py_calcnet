@@ -561,7 +561,12 @@ class CalcNet:
     """Create the calculation order from the stage number of each node.
     
     This requires that the nodes already know their own stage numbers,
-    and that the total number of stages is already known."""
+    and that the total number of stages is already known.
+    
+    TODO: For calculation purposes, we want to be able to generate this
+    for only the nodes descending from a given node.
+    So the difference in stage numbers would select the position.
+    Maybe ordering, from the root, should not always be kept up-to-date."""
     self.ordering=[[] for i in range(self.num_stages)]
     for node_id,node in self.adjacency.items():
       self.ordering[node.stage].append(node_id)
