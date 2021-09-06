@@ -176,7 +176,6 @@ class CalcNet:
         The reverse dependencies of all nodes eventually lead back to this one,
         and it has no reverse dependencies of its own.
         This node's dictionary entry is ``None``.
-    - ordering = the calculation order as a sequence of stages, each stage a group of nodes
     - num_stages = the total number of calculation stages"""
   def __init__(self,auto_recalc=True,exp_dict=None):
     """New calculation network, optionally with initial expressions
@@ -197,7 +196,6 @@ class CalcNet:
     self.adjacency[None]=self.root_node
     #Set up the ordering
     self.root_node.stage=0
-    self.ordering=[[None]]
     self.num_stages=1
     #Add any provided nodes
     if exp_dict is not None:
@@ -260,11 +258,11 @@ class CalcNet:
     >>> net.adjacency["B"].stage
     2
     >>> net.add_node("C","B + 5")
-    >>> net.ordering[3]
-    ['C']
+    >>> net.adjacency["C"].stage
+    3
     >>> net.add_node("D","A - 5")
-    >>> net.ordering[2]
-    ['B', 'D']
+    >>> net.adjacency["D"].stage
+    2
     
     """
     self.adjacency[node_id]=CalcNode(node_id,expression)
@@ -274,10 +272,7 @@ class CalcNet:
     self.adjacency[node_id].stage = stage
     if stage == self.num_stages:
       #Network needs a new stage
-      self.ordering.append([node_id])
       self.num_stages += 1
-    else:
-      self.ordering[stage].append(node_id)
     #Evaluate node if requested
     #(All dependencies have to be satisfied to add a node, so nothing else needs to be updated)
     if self.auto_recalc:
@@ -559,22 +554,42 @@ class CalcNet:
     #Done
     return
   def _collect_stages(self,start_node_id=None):
-    """Create the calculation order from the stage number of each node.
+    """Return the calculation order from the stage number of each node.
     
     This requires that the nodes already know their own stage numbers,
     and that the total number of stages is already known.
 
+    Arguments:
+
+      - start_node_id = optional node ID for the node from which the calculation will start
+
     If no node ID is given, the evaluation order for the entire network is included.
-    
-    TODO: For calculation purposes, we want to be able to generate this
-    for only the nodes descending from a given node.
-    So the difference in stage numbers would select the position.
-    Maybe ordering, from the root, should not always be kept up-to-date."""
-    ##TODO: use the start node ID
-    self.ordering=[[] for i in range(self.num_stages)]
-    for node_id,node in self.adjacency.items():
-      self.ordering[node.stage].append(node_id)
-    return
+
+    Returns:
+
+      - ordering = the calculation order as a sequence of stages, each stage a group of nodes
+
+    >>> net=CalcNet(auto_recalc=False)
+    >>> net.add_node("A","1")
+    >>> net.add_node("B","A + 1")
+    >>> net.add_node("C","B + 1")
+    >>> net.add_node("D","C + 1")
+    >>> net.add_node("E","D + 1")
+    >>> net.add_node("F","D + 1")
+    >>> ordering = net._collect_stages("C")
+    >>> ordering[0]
+    ['C']
+    >>> ordering[1]
+    ['D']
+    >>> ordering[2]
+    ['E', 'F']
+
+    """
+    start_level=self.adjacency[start_node_id].stage
+    ordering=[[] for i in range(self.num_stages - start_level)]
+    for nd in self.walk(start_node_id):
+      ordering[self.adjacency[nd].stage - start_level].append(nd)
+    return ordering
   def _update_evaluation_order(self,start_node_id=None):
     """Update the evaluation order, starting from the given node.
 
@@ -592,17 +607,17 @@ class CalcNet:
     >>> net.add_node("B","D + F - J + 2")
     >>> net.add_node("A","B + C - E + G - 6")
     >>> net._update_evaluation_order()
-    >>> net._collect_stages()
-    >>> o=[stage.sort() for stage in net.ordering] #For presentation purposes only
-    >>> net.ordering[0]
+    >>> ordering = net._collect_stages()
+    >>> o=[stage.sort() for stage in ordering] #For presentation purposes only
+    >>> ordering[0]
     [None]
-    >>> net.ordering[1]
+    >>> ordering[1]
     ['F', 'G', 'H', 'I', 'J']
-    >>> net.ordering[2]
+    >>> ordering[2]
     ['C', 'D', 'E']
-    >>> net.ordering[3]
+    >>> ordering[3]
     ['B']
-    >>> net.ordering[4]
+    >>> ordering[4]
     ['A']
     >>> net.adjacency["A"].stage
     4
@@ -624,7 +639,7 @@ class CalcNet:
     Assumes the evaluation order is already up-to-date.
     If no node ID is given, all nodes are evaluated."""
     #Get the nodes to recalculate grouped by stage
-    self._collect_stages(start_node_id)
+    ordering = self._collect_stages(start_node_id)
     ##TODO
     ##TODO: be sure not to try to evaluate the root node (or, abandon having two classes and do a quick no-op for the root instead)
     raise NotImplementedError("Network calculation not yet implemented.")
