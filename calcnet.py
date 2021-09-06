@@ -636,13 +636,25 @@ class CalcNet:
   def _evaluate_from(self,start_node_id=None):
     """Perform an evaluation of the nodes, starting from the given node
     
-    Assumes the evaluation order is already up-to-date.
-    If no node ID is given, all nodes are evaluated."""
+    Assumes the stage labeling of each node is already up-to-date.
+    If no node ID is given, all nodes are evaluated.
+    
+    >>> net=CalcNet(auto_recalc=False)
+    >>> net.add_node("X","0")
+    >>> net.add_node("Y","X + 1")
+    >>> net.add_node("Z","Y + 1")
+    >>> net._evaluate_from("X")
+    >>> net.adjacency["Z"].value
+    2
+    
+    """
     #Get the nodes to recalculate grouped by stage
     ordering = self._collect_stages(start_node_id)
-    ##TODO
-    ##TODO: be sure not to try to evaluate the root node (or, abandon having two classes and do a quick no-op for the root instead)
-    raise NotImplementedError("Network calculation not yet implemented.")
+    #Go through the stages in order
+    for stage in ordering:
+      #TODO: all the nodes in a given stage can be evaluated in parallel
+      for nd in stage:
+        self.evaluate_node(nd)
     return
   def evaluate_node(self, node_id):
     """Evaluate the expression for the specified node
