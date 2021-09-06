@@ -521,6 +521,7 @@ class CalcNet:
     return
   def _confirm_all_satisfied(self):
     """Confirm that no nodes have unsatisfied dependencies remaining"""
+    ##TODO: should this accept a starting node ID, and walk, to reduce the number of nodes checked?
     still_unsat=[nd for nd in self.adjacency.keys() if self.adjacency[nd].unsatisfied>0]
     if len(still_unsat)>0:
       err_msg="Failed to determine ordering. Possible cycle:"
@@ -557,16 +558,19 @@ class CalcNet:
           queue.append(child_id)
     #Done
     return
-  def _collect_stages(self):
+  def _collect_stages(self,start_node_id=None):
     """Create the calculation order from the stage number of each node.
     
     This requires that the nodes already know their own stage numbers,
     and that the total number of stages is already known.
+
+    If no node ID is given, the evaluation order for the entire network is included.
     
     TODO: For calculation purposes, we want to be able to generate this
     for only the nodes descending from a given node.
     So the difference in stage numbers would select the position.
     Maybe ordering, from the root, should not always be kept up-to-date."""
+    ##TODO: use the start node ID
     self.ordering=[[] for i in range(self.num_stages)]
     for node_id,node in self.adjacency.items():
       self.ordering[node.stage].append(node_id)
@@ -588,6 +592,7 @@ class CalcNet:
     >>> net.add_node("B","D + F - J + 2")
     >>> net.add_node("A","B + C - E + G - 6")
     >>> net._update_evaluation_order()
+    >>> net._collect_stages()
     >>> o=[stage.sort() for stage in net.ordering] #For presentation purposes only
     >>> net.ordering[0]
     [None]
@@ -612,14 +617,14 @@ class CalcNet:
     self._trace_unsatisfied(start_node_id)
     self._update_stage_labels(start_node_id)
     self._confirm_all_satisfied()
-    self._collect_stages()
     return
   def _evaluate_from(self,start_node_id=None):
     """Perform an evaluation of the nodes, starting from the given node
     
     Assumes the evaluation order is already up-to-date.
     If no node ID is given, all nodes are evaluated."""
-    start_node = self.adjacency[start_node_id]
+    #Get the nodes to recalculate grouped by stage
+    self._collect_stages(start_node_id)
     ##TODO
     ##TODO: be sure not to try to evaluate the root node (or, abandon having two classes and do a quick no-op for the root instead)
     raise NotImplementedError("Network calculation not yet implemented.")
