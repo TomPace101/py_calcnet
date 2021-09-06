@@ -176,7 +176,26 @@ class CalcNet:
         The reverse dependencies of all nodes eventually lead back to this one,
         and it has no reverse dependencies of its own.
         This node's dictionary entry is ``None``.
-    - num_stages = the total number of calculation stages"""
+    - num_stages = the total number of calculation stages
+
+    
+  >>> net=CalcNet(auto_recalc=True)
+  >>> net.add_node("F","6")
+  >>> net.add_node("G","7")
+  >>> net.add_node("H","8")
+  >>> net.add_node("I","9")
+  >>> net.add_node("J","10")
+  >>> net.add_node("C","F + I - 12")
+  >>> net.add_node("D","H - 4")
+  >>> net.add_node("E","J - 5")
+  >>> net.add_node("B","D + F - J + 2")
+  >>> net.add_node("A","B + C - E + G - 6")
+  >>> net.adjacency["A"].value
+  1
+  >>> net.count()
+  (11, 16)
+
+  """
   def __init__(self,auto_recalc=True,exp_dict=None):
     """New calculation network, optionally with initial expressions
 
@@ -276,7 +295,7 @@ class CalcNet:
     #Evaluate node if requested
     #(All dependencies have to be satisfied to add a node, so nothing else needs to be updated)
     if self.auto_recalc:
-      self.adjacency[node_id].evaluate()
+      self.evaluate_node(node_id)
     return
   def revise_node(self,node_id,expression):
     """Make a change to an existing node
@@ -646,7 +665,7 @@ class CalcNet:
     >>> net._evaluate_from("X")
     >>> net.adjacency["Z"].value
     2
-    
+
     """
     #Get the nodes to recalculate grouped by stage
     ordering = self._collect_stages(start_node_id)
