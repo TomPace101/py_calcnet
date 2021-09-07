@@ -29,16 +29,23 @@ def is_sorted(seq):
   True
   >>> is_sorted([])
   True
+  >>> is_sorted([None, None, 1, 2, 3])
+  True
 
   """
   if len(seq)<=1:
     return True
   else:
     #Compare each item in the list to the following item
-    last=seq[0]
-    for i in range(1,len(seq)):
+    #``None`` is allowed at the start of the list
+    start = 0
+    last = seq[start]
+    while last is None:
+      start += 1
+      last=seq[start]
+    for i in range(start,len(seq)):
       itm=seq[i]
-      res = last <= itm
+      res = (itm is not None) and (last <= itm)
       if not res:
         break
       last = itm
@@ -86,6 +93,14 @@ def get_differences(list_a,list_b):
   >>> not_in_b
   [1, 5, 9]
 
+  >>> c = [None, 2]
+  >>> d = [1, 2, 3]
+  >>> not_in_c, not_in_d = get_differences(c,d)
+  >>> not_in_c
+  [1, 3]
+  >>> not_in_d
+  [None]
+
   Returns:
 
     - not_in_a = elements in list b not in list a
@@ -96,14 +111,16 @@ def get_differences(list_a,list_b):
   not_in_a=[]
   not_in_b=[]
   while idx_a < len(list_a) and idx_b < len(list_b):
-    if list_a[idx_a] == list_b[idx_b]:
+    itm_a = list_a[idx_a]
+    itm_b = list_b[idx_b]
+    if itm_a == itm_b:
       idx_a += 1
       idx_b += 1
-    elif list_a[idx_a] < list_b[idx_b]:
-      not_in_b.append(list_a[idx_a])
+    elif (itm_a is None) or (itm_a < itm_b):
+      not_in_b.append(itm_a)
       idx_a += 1
-    elif list_b[idx_b] < list_a[idx_a]:
-      not_in_a.append(list_b[idx_b])
+    elif (itm_b is None) or (itm_b < itm_a):
+      not_in_a.append(itm_b)
       idx_b += 1
     else:
       raise Exception("This should not have happened.")
@@ -318,6 +335,13 @@ class CalcNet:
     4
     >>> net.adjacency["Y"].stage
     2
+    >>> net.revise_node("Z","30")
+    >>> net.adjacency["Z"].reverse_deps
+    [None]
+    >>> net.adjacency["Z"].stage
+    1
+    >>> net.adjacency["A"].stage
+    3
 
     """
     self.adjacency[node_id].expression=expression
@@ -454,6 +478,7 @@ class CalcNet:
     """
     #Get the list of reverse dependencies
     reverse_deps=self.adjacency[node_id].process_expression()
+    #If there are no dependencies, link to the root node
     if len(reverse_deps)==0:
       reverse_deps=[None] #If no dependencies, link to the root node
     #Confirm that all the reverse dependencies are valid
