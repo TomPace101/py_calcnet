@@ -510,15 +510,6 @@ class CalcNet:
         #No need to re-sort because we're removing an item from a sorted list
     #Done
     return
-  def recalculate_from(self,start_node_id=None):
-    """Perform a recalculation of the network starting from the given node ID.
-
-    If no node ID is given, a recalculation of the entire network is performed"""
-    #Update the evaluation order
-    self._update_evaluation_order(start_node_id)
-    #Do the evaluations
-    self._evaluate_from(start_node_id)
-    return
   def _trace_unsatisfied(self,start_node_id=None):
     """Trace the unsatisfied dependencies in all descendants of the given node.
 
@@ -564,16 +555,6 @@ class CalcNet:
       for child_id in self.adjacency[parent_id].forward_deps:
         self.adjacency[child_id].unsatisfied += 1
     return
-  def _confirm_all_satisfied(self):
-    """Confirm that no nodes have unsatisfied dependencies remaining"""
-    ##TODO: should this accept a starting node ID, and walk, to reduce the number of nodes checked?
-    still_unsat=[nd for nd in self.adjacency.keys() if self.adjacency[nd].unsatisfied>0]
-    if len(still_unsat)>0:
-      err_msg="Failed to determine ordering. Possible cycle:"
-      for nd in still_unsat:
-        err_msg += "\n{}: {}".format(nd,self.adjacency[nd].unsatisfied)
-      raise Exception(err_msg)
-    return
   def _update_stage_labels(self,start_node_id=None):
     """Label the specified node and its descendants with a calculation stage
 
@@ -603,42 +584,16 @@ class CalcNet:
           queue.append(child_id)
     #Done
     return
-  def _collect_stages(self,start_node_id=None):
-    """Return the calculation order from the stage number of each node.
-    
-    This requires that the nodes already know their own stage numbers,
-    and that the total number of stages is already known.
-
-    Arguments:
-
-      - start_node_id = optional node ID for the node from which the calculation will start
-
-    If no node ID is given, the evaluation order for the entire network is included.
-
-    Returns:
-
-      - ordering = the calculation order as a sequence of stages, each stage a group of nodes
-
-    >>> exp_block=[
-    ...   ("A","1"),     ("B","A + 1"),
-    ...   ("C","B + 1"), ("D","C + 1"),
-    ...   ("E","D + 1"), ("F","D + 1")
-    ... ]
-    >>> net=CalcNet(auto_recalc=False,exp_block=exp_block)
-    >>> ordering = net._collect_stages("C")
-    >>> ordering[0]
-    ['C']
-    >>> ordering[1]
-    ['D']
-    >>> ordering[2]
-    ['E', 'F']
-
-    """
-    start_level=self.adjacency[start_node_id].stage
-    ordering=[[] for i in range(self.num_stages - start_level)]
-    for nd in self.walk(start_node_id):
-      ordering[self.adjacency[nd].stage - start_level].append(nd)
-    return ordering
+  def _confirm_all_satisfied(self):
+    """Confirm that no nodes have unsatisfied dependencies remaining"""
+    ##TODO: should this accept a starting node ID, and walk, to reduce the number of nodes checked?
+    still_unsat=[nd for nd in self.adjacency.keys() if self.adjacency[nd].unsatisfied>0]
+    if len(still_unsat)>0:
+      err_msg="Failed to determine ordering. Possible cycle:"
+      for nd in still_unsat:
+        err_msg += "\n{}: {}".format(nd,self.adjacency[nd].unsatisfied)
+      raise Exception(err_msg)
+    return
   def _update_evaluation_order(self,start_node_id=None):
     """Update the evaluation order, starting from the given node.
 
@@ -677,27 +632,42 @@ class CalcNet:
     self._update_stage_labels(start_node_id)
     self._confirm_all_satisfied()
     return
-  def _evaluate_from(self,start_node_id=None):
-    """Perform an evaluation of the nodes, starting from the given node
+  def _collect_stages(self,start_node_id=None):
+    """Return the calculation order from the stage number of each node.
     
-    Assumes the stage labeling of each node is already up-to-date.
-    If no node ID is given, all nodes are evaluated.
-    
-    >>> exp_block=[("X","0"), ("Y","X + 1"), ("Z","Y + 1")]
+    This requires that the nodes already know their own stage numbers,
+    and that the total number of stages is already known.
+
+    Arguments:
+
+      - start_node_id = optional node ID for the node from which the calculation will start
+
+    If no node ID is given, the evaluation order for the entire network is included.
+
+    Returns:
+
+      - ordering = the calculation order as a sequence of stages, each stage a group of nodes
+
+    >>> exp_block=[
+    ...   ("A","1"),     ("B","A + 1"),
+    ...   ("C","B + 1"), ("D","C + 1"),
+    ...   ("E","D + 1"), ("F","D + 1")
+    ... ]
     >>> net=CalcNet(auto_recalc=False,exp_block=exp_block)
-    >>> net._evaluate_from("X")
-    >>> net.adjacency["Z"].value
-    2
+    >>> ordering = net._collect_stages("C")
+    >>> ordering[0]
+    ['C']
+    >>> ordering[1]
+    ['D']
+    >>> ordering[2]
+    ['E', 'F']
 
     """
-    #Get the nodes to recalculate grouped by stage
-    ordering = self._collect_stages(start_node_id)
-    #Go through the stages in order
-    for stage in ordering:
-      #TODO: all the nodes in a given stage can be evaluated in parallel
-      for nd in stage:
-        self.evaluate_node(nd)
-    return
+    start_level=self.adjacency[start_node_id].stage
+    ordering=[[] for i in range(self.num_stages - start_level)]
+    for nd in self.walk(start_node_id):
+      ordering[self.adjacency[nd].stage - start_level].append(nd)
+    return ordering
   def evaluate_node(self, node_id):
     """Evaluate the expression for the specified node
 
@@ -733,4 +703,34 @@ class CalcNet:
       node.value=eval(node.expression,parameters)
       #Value has now been updated
       node.up_to_date = True
+    return
+  def _evaluate_from(self,start_node_id=None):
+    """Perform an evaluation of the nodes, starting from the given node
+    
+    Assumes the stage labeling of each node is already up-to-date.
+    If no node ID is given, all nodes are evaluated.
+    
+    >>> exp_block=[("X","0"), ("Y","X + 1"), ("Z","Y + 1")]
+    >>> net=CalcNet(auto_recalc=False,exp_block=exp_block)
+    >>> net._evaluate_from("X")
+    >>> net.adjacency["Z"].value
+    2
+
+    """
+    #Get the nodes to recalculate grouped by stage
+    ordering = self._collect_stages(start_node_id)
+    #Go through the stages in order
+    for stage in ordering:
+      #TODO: all the nodes in a given stage can be evaluated in parallel
+      for nd in stage:
+        self.evaluate_node(nd)
+    return
+  def recalculate_from(self,start_node_id=None):
+    """Perform a recalculation of the network starting from the given node ID.
+
+    If no node ID is given, a recalculation of the entire network is performed"""
+    #Update the evaluation order
+    self._update_evaluation_order(start_node_id)
+    #Do the evaluations
+    self._evaluate_from(start_node_id)
     return
