@@ -178,6 +178,9 @@ class CalcNode:
     new_deps.sort()
     #Remove duplications so items are unique
     reverse_deps=get_uniques(new_deps)
+    #If there are no dependencies, link to the root node
+    if len(reverse_deps)==0:
+      reverse_deps=[None]
     #Compile the expression
     ##TODO: no compiled form for now
     return reverse_deps
@@ -494,9 +497,6 @@ class CalcNet:
     """
     #Get the list of reverse dependencies
     reverse_deps=self.adjacency[node_id].process_expression()
-    #If there are no dependencies, link to the root node
-    if len(reverse_deps)==0:
-      reverse_deps=[None] #If no dependencies, link to the root node
     #Find which dependencies are new, and which old dependencies have been removed
     old_back_nodes=self.adjacency[node_id].reverse_deps
     removed_deps,new_deps=get_differences(reverse_deps,old_back_nodes)
