@@ -377,7 +377,7 @@ class CalcNet:
     #Remove the node from the adjacency list
     self.adjacency.pop(node_id)
     return
-  def insert_expressions(self,exp_block,update_only=False,add_only=False,process_forwards=True):
+  def insert_expressions(self,exp_block,update_only=False,add_only=False,process_forward_deps=True):
     """Add or update expressions for a group of nodes
 
     Arguments:
@@ -385,7 +385,7 @@ class CalcNet:
       - exp_block = sequence of pairs (node_id, expression)
       - update_only = optional boolean, True to raise an error if any node IDs do not already exist
       - add_only = optional boolean, True to raise an error if any node IDs do already exist
-      - process_forwards = optional boolean, passed to ``add_node`` for new nodes
+      - process_forward_deps = optional boolean, passed to ``add_node`` for new nodes
       
     If both ``update_only`` and ``add_only`` are True,
     there will be an exception unless the expression block is completely empty.
@@ -399,7 +399,7 @@ class CalcNet:
       else:
         if update_only:
           raise Exception("Node ID does not already exist: {}".format(node_id))
-        self.add_node(node_id,expression,process_forwards)
+        self.add_node(node_id,expression,process_forward_deps)
     return
   def compute_stage(self,node_id):
     """Compute the calculation stage number for the specified node
