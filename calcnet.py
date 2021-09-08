@@ -247,7 +247,13 @@ class CalcNet:
     """
     ##TODO: implement
     raise NotImplementedError("Loading from file not yet supported")
-    net = cls()
+    ##TODO: should we let the network's auto-recalc setting be active as we load it?
+    net = cls(auto_recalc=False)
+    #Read the entire file
+    #Process the metadata portion
+    #Add all the expressions
+    #Set auto_recalc to the specified value
+    #If auto_recalc, evaluate
     return net
   def save(self,fpath):
     """Write the calculation network to a file
@@ -257,9 +263,23 @@ class CalcNet:
     Arguments:
 
       - fpath = path to the output file, as a string
+
+    If it already exists, the output file will be overwritten.
     """
-    ##TODO: implement
-    raise NotImplementedError("Saving to file not yet supported")
+    #Collect the stage order for the entire graph
+    ordering = self._collect_stages()
+    #Open the file for writing
+    ##TODO: should we use the CSV module for this?
+    with open(fpath,"w") as fp:
+      ##TODO: write out network properties as metadata
+      #Iterate over stages and nodes within each stage
+      for stage in ordering:
+        for node_id in stage:
+          node = self.adjacency[node_id]
+          #Write the node ID and its expression
+          outstr="{},{},{}".format(node_id,node.expression,node.value)
+          fp.write(outstr)
+    #Done
     return
   def count(self):
     """Return a count of the number of nodes and the number of edges
