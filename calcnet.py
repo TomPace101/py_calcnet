@@ -391,8 +391,8 @@ class CalcNet:
       - add_only = optional boolean, True to raise an error if any node IDs do already exist
       - process_forwards = optional boolean, passed to ``add_node`` for new nodes
       
-    If both ``update_only`` and ``add_only`` to True,
-    there will be an exception unless the expression dictionary is completely empty.
+    If both ``update_only`` and ``add_only`` are True,
+    there will be an exception unless the expression block is completely empty.
     
     """
     for node_id,expression in exp_block:
