@@ -216,13 +216,13 @@ class CalcNet:
   (11, 16)
 
   """
-  def __init__(self,auto_recalc=True,exp_dict=None):
+  def __init__(self,auto_recalc=True,exp_block=None):
     """New calculation network, optionally with initial expressions
 
     Arguments:
 
       - auto_recalc = optional boolean for the object's ``auto_recalc`` attribute
-      - exp_dict = optional dictionary (potentially ordered) of node IDs and expressions to populate the network"""
+      - exp_block = sequence of pairs (node ID, expression) to populate the network"""
     #Set the level of automation
     self.auto_recalc=auto_recalc
     #Initialize adjacency dictionary
@@ -237,8 +237,8 @@ class CalcNet:
     self.root_node.stage=0
     self.num_stages=1
     #Add any provided nodes
-    if exp_dict is not None:
-      self.insert_expressions(exp_dict)
+    if exp_block is not None:
+      self.insert_expressions(exp_block)
     return
   @classmethod
   def load(cls,fpath):
@@ -381,21 +381,21 @@ class CalcNet:
     #Remove the node from the adjacency list
     self.adjacency.pop(node_id)
     return
-  def insert_expressions(self,exp_dict,update_only=False,add_only=False):
+  def insert_expressions(self,exp_block,update_only=False,add_only=False,process_forwards=True):
     """Add or update expressions for a group of nodes
 
     Arguments:
 
-      - exp_dict = dictionary {node_id: expression}
-      - update_only = boolean, True to raise an error if any node IDs do not already exist
-      - add_only = boolean, True to raise an error if any node IDs do already exist
+      - exp_block = sequence of pairs (node_id, expression)
+      - update_only = optional boolean, True to raise an error if any node IDs do not already exist
+      - add_only = optional boolean, True to raise an error if any node IDs do already exist
+      - process_forwards = optional boolean, passed to ``add_node`` for new nodes
       
     If both ``update_only`` and ``add_only`` to True,
     there will be an exception unless the expression dictionary is completely empty.
     
-    Note that order of addition to the network matters,
-    so an ordered dictionary is generally advised."""
-    for node_id,expression in exp_dict.items():
+    """
+    for node_id,expression in exp_block:
       if node_id in self.adjacency.keys():
         if add_only:
           raise Exception("Node ID already exists: {}".format(node_id))
@@ -403,7 +403,7 @@ class CalcNet:
       else:
         if update_only:
           raise Exception("Node ID does not already exist: {}".format(node_id))
-        self.add_node(node_id,expression)
+        self.add_node(node_id,expression,porcess_forwards)
     return
   def compute_stage(self,node_id):
     """Compute the calculation stage number for the specified node
