@@ -281,8 +281,15 @@ class CalcNet:
     for node in self.adjacency.values():
       edges += len(node.forward_deps)
     return nodes, edges
-  def add_node(self,node_id,expression):
+  def add_node(self,node_id,expression,check_unresolved=True):
     """Add a node to the calculation network
+
+    Arguments:
+
+      - node_id = ID of the node to add
+      - expression = expression string for the node
+      - check_unresolved = optional boolean, True to raise an exception
+        if any of the reverse dependencies in the expression do not already exist.
     
     >>> net = CalcNet(auto_recalc=False)
     >>> net.add_node("A","5")
@@ -302,7 +309,7 @@ class CalcNet:
     
     """
     self.adjacency[node_id]=CalcNode(node_id,expression)
-    self.update_adjacencies(node_id)
+    self.update_adjacencies(node_id,check_unresolved)
     #Add to the appropriate calculation stage
     stage=self.compute_stage(node_id)
     self.adjacency[node_id].stage = stage
@@ -381,9 +388,9 @@ class CalcNet:
 
     Arguments:
 
-      exp_dict = dictionary {node_id: expression}
-      update_only = boolean, True to raise an error if any node IDs do not already exist
-      add_only = boolean, True to raise an error if any node IDs do already exist
+      - exp_dict = dictionary {node_id: expression}
+      - update_only = boolean, True to raise an error if any node IDs do not already exist
+      - add_only = boolean, True to raise an error if any node IDs do already exist
       
     If both ``update_only`` and ``add_only`` to True,
     there will be an exception unless the expression dictionary is completely empty.
@@ -457,9 +464,17 @@ class CalcNet:
       #Mark the undiscovered nodes as now discovered
       for child_id in undiscovered:
         self.adjacency[child_id].discovered = True
-  def update_adjacencies(self,node_id):
+  def update_adjacencies(self,node_id,check_unresolved=True):
     """Update the reverse and forward dependencies from a single node
-    
+
+    Arguments:
+
+      - node_id = ID of the node to update:
+        Its own reverse dependencies will be updated, as well as the forward dependencies
+        of those reverse dependencies.
+      - check_unresolved = optional boolean, True to raise an exception
+        if any of the reverse dependencies in the expression do not already exist.
+
     >>> net=CalcNet(auto_recalc=False)
     >>> net.add_node("A","5")
     >>> net.add_node("B","10")
@@ -482,8 +497,9 @@ class CalcNet:
     if len(reverse_deps)==0:
       reverse_deps=[None] #If no dependencies, link to the root node
     #Confirm that all the reverse dependencies are valid
-    invalid_deps=[d for d in reverse_deps if d not in self.adjacency.keys()]
-    assert len(invalid_deps)==0, "Invalid identifiers in expression for {}: {}".format(node_id,str(invalid_deps))
+    if check_unresolved:
+      invalid_deps=[d for d in reverse_deps if d not in self.adjacency.keys()]
+      assert len(invalid_deps)==0, "Invalid identifiers in expression for {}: {}".format(node_id,str(invalid_deps))
     #Find which dependencies are new, and which old dependencies have been removed
     old_back_nodes=self.adjacency[node_id].reverse_deps
     removed_deps,new_deps=get_differences(reverse_deps,old_back_nodes)
