@@ -457,6 +457,36 @@ class CalcNet:
       #Mark the undiscovered nodes as now discovered
       for child_id in undiscovered:
         self.adjacency[child_id].discovered = True
+  def _set_all_forward_deps(self):
+    """Fill out all forward dependencies for the entire graph
+
+    This is needed during loading operations, or any other time
+    when nodes have been added with ``process_forward_deps=False``.
+
+    >>> net=CalcNet(auto_recalc=False)
+    >>> net.add_node("A","0",process_forward_deps=False)
+    >>> net.add_node("B","A + 1",process_forward_deps=False)
+    >>> net.add_node("C","B + 1",process_forward_deps=False)
+    >>> net.adjacency["A"].forward_deps
+    []
+    >>> net._set_all_forward_deps()
+    >>> net.adjacency["A"].forward_deps
+    ['B']
+    >>> net.adjacency["B"].forward_deps
+    ['C']
+    """
+    #Initialize all forward dependencies to empty
+    for node in self.adjacency.values():
+      node.forward_deps = []
+    #For each node, use its reverse dependencies to set the forward dependencies of others
+    for node_id,node in self.adjacency.items():
+      for dep_id in node.reverse_deps:
+        self.adjacency[dep_id].forward_deps.append(node_id)
+    #Sort all forward dependencies
+    for node in self.adjacency.values():
+      node.forward_deps.sort()
+    #Done
+    return
   def update_adjacencies(self,node_id,process_forward_deps=True):
     """Update the reverse and forward dependencies from a single node
 
