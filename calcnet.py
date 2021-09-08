@@ -274,11 +274,7 @@ class CalcNet:
 
       - nodes = integer number of nodes
       - edges = integer number of edges
-
-    >>> expressions={"A":"100", "B":"A - 100", "C":"A + B"}
-    >>> net = CalcNet(auto_recalc=False,exp_dict=expressions)
-    >>> net.count()
-    (4, 4)"""
+    """
     nodes=len(self.adjacency.keys())
     edges=0
     for node in self.adjacency.values():
