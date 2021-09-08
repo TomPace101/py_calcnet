@@ -198,18 +198,12 @@ class CalcNet:
         This node's dictionary entry is ``None``.
     - num_stages = the total number of calculation stages
 
-    
-  >>> net=CalcNet(auto_recalc=True)
-  >>> net.add_node("F","6")
-  >>> net.add_node("G","7")
-  >>> net.add_node("H","8")
-  >>> net.add_node("I","9")
-  >>> net.add_node("J","10")
-  >>> net.add_node("C","F + I - 12")
-  >>> net.add_node("D","H - 4")
-  >>> net.add_node("E","J - 5")
-  >>> net.add_node("B","D + F - J + 2")
-  >>> net.add_node("A","B + C - E + G - 6")
+  >>> exp_block=[
+  ...   ("F","6"), ("G","7"), ("H","8"), ("I","9"), ("J","10"),
+  ...   ("C","F + I - 12"), ("D","H - 4"), ("E","J - 5"),
+  ...   ("B","D + F - J + 2"), ("A","B + C - E + G - 6")
+  ... ]
+  >>> net=CalcNet(auto_recalc=True, exp_block=exp_block)
   >>> net.adjacency["A"].value
   1
   >>> net.count()
@@ -324,11 +318,13 @@ class CalcNet:
     
     The calculation order is automatically updated when a node is changed.
     
-    >>> net=CalcNet(auto_recalc=False)
-    >>> net.add_node("X","10")
-    >>> net.add_node("Y","X + 10")
-    >>> net.add_node("Z","X + 5")
-    >>> net.add_node("A","X + Y + Z")
+    >>> exp_block = [
+    ...   ("X","10"),
+    ...   ("Y","X + 10"),
+    ...   ("Z","X + 5"),
+    ...   ("A","X + Y + Z")
+    ... ]
+    >>> net=CalcNet(auto_recalc=False,exp_block=exp_block)
     >>> net.adjacency["Z"].stage
     2
     >>> net.adjacency["A"].stage
@@ -403,7 +399,7 @@ class CalcNet:
       else:
         if update_only:
           raise Exception("Node ID does not already exist: {}".format(node_id))
-        self.add_node(node_id,expression,porcess_forwards)
+        self.add_node(node_id,expression,process_forwards)
     return
   def compute_stage(self,node_id):
     """Compute the calculation stage number for the specified node
@@ -425,17 +421,16 @@ class CalcNet:
 
     Yields node IDs for the adjacency dictionary.
 
-    >>> net=CalcNet(auto_recalc=False)
-    >>> net.add_node("J","1")
-    >>> net.add_node("I","1")
-    >>> net.add_node("H","1")
-    >>> net.add_node("G","1")
-    >>> net.add_node("F","H + I + J - 1")
-    >>> net.add_node("E","G + H + I + J - 2")
-    >>> net.add_node("D","G + H + I - 1")
-    >>> net.add_node("C","D + E + F + J - 4")
-    >>> net.add_node("B","D + E + F + G - 4")
-    >>> net.add_node("A","B + C + G + J - 4")
+    >>> exp_block=[
+    ...   ("J","1"), ("I","1"), ("H","1"), ("G","1"),
+    ...   ("F","H + I + J - 1"),
+    ...   ("E","G + H + I + J - 2"),
+    ...   ("D","G + H + I - 1"),
+    ...   ("C","D + E + F + J - 4"),
+    ...   ("B","D + E + F + G - 4"),
+    ...   ("A","B + C + G + J - 4")
+    ... ]
+    >>> net=CalcNet(auto_recalc=False,exp_block=exp_block)
     >>> len([nd for nd in net.walk()])
     11
     >>> len([nd for nd in net.walk(breadth_first=False)])
@@ -475,11 +470,11 @@ class CalcNet:
         This will raise an exception if any of the reverse dependencies
         in the expression do not already exist.
 
-    >>> net=CalcNet(auto_recalc=False)
-    >>> net.add_node("A","5")
-    >>> net.add_node("B","10")
-    >>> net.add_node("C","15")
-    >>> net.add_node("D","A + B + C")
+    >>> exp_block=[
+    ...   ("A","5"), ("B","10"), ("C","15"), 
+    ...   ("D","A + B + C")
+    ... ]
+    >>> net=CalcNet(auto_recalc=False,exp_block=exp_block)
     >>> net.adjacency["D"].reverse_deps
     ['A', 'B', 'C']
     >>> net.adjacency["A"].forward_deps
@@ -530,26 +525,23 @@ class CalcNet:
     Each node, including the start node, is also marked as needing recalculation,
     by setting the ``up_to_date`` value to False.
 
-    >>> net=CalcNet(auto_recalc=False)
-    >>> net.add_node("A","5")
-    >>> net.add_node("B","A + 1")
-    >>> net.add_node("C","A + B")
-    >>> net.add_node("D","A + B + C")
+    >>> exp_block = [
+    ...   ("A","5"),     ("B","A + 1"),
+    ...   ("C","A + B"), ("D","A + B + C")
+    ... ]
+    >>> net=CalcNet(auto_recalc=False,exp_block=exp_block)
     >>> net._trace_unsatisfied("B")
     >>> net.adjacency["D"].unsatisfied
     2
 
     If no node ID is given, all reverse dependencies are listed as unsatisfied.
     
-    >>> net=CalcNet(auto_recalc=False)
-    >>> net.add_node("M","10")
-    >>> net.add_node("N","20")
-    >>> net.add_node("P","2 * M")
-    >>> net.add_node("Q","3 * N")
-    >>> net.add_node("R","N / M")
-    >>> net.add_node("X","P + Q")
-    >>> net.add_node("Y","Q + R")
-    >>> net.add_node("Z","N + Q")
+    >>> exp_block=[
+    ...   ("M","10"),    ("N","20"),
+    ...   ("P","2 * M"), ("Q","3 * N"), ("R","N / M"),
+    ...   ("X","P + Q"), ("Y","Q + R"), ("Z","N + Q")
+    ... ]
+    >>> net=CalcNet(auto_recalc=False,exp_block=exp_block)
     >>> net._trace_unsatisfied()
     >>> net.adjacency["M"].unsatisfied
     1
@@ -627,13 +619,12 @@ class CalcNet:
 
       - ordering = the calculation order as a sequence of stages, each stage a group of nodes
 
-    >>> net=CalcNet(auto_recalc=False)
-    >>> net.add_node("A","1")
-    >>> net.add_node("B","A + 1")
-    >>> net.add_node("C","B + 1")
-    >>> net.add_node("D","C + 1")
-    >>> net.add_node("E","D + 1")
-    >>> net.add_node("F","D + 1")
+    >>> exp_block=[
+    ...   ("A","1"),     ("B","A + 1"),
+    ...   ("C","B + 1"), ("D","C + 1"),
+    ...   ("E","D + 1"), ("F","D + 1")
+    ... ]
+    >>> net=CalcNet(auto_recalc=False,exp_block=exp_block)
     >>> ordering = net._collect_stages("C")
     >>> ordering[0]
     ['C']
@@ -653,17 +644,12 @@ class CalcNet:
 
     If no node ID is given, the evaluation order for the entire network is updated.
 
-    >>> net=CalcNet(auto_recalc=False)
-    >>> net.add_node("F","6")
-    >>> net.add_node("G","7")
-    >>> net.add_node("H","8")
-    >>> net.add_node("I","9")
-    >>> net.add_node("J","10")
-    >>> net.add_node("C","F + I - 12")
-    >>> net.add_node("D","H - 4")
-    >>> net.add_node("E","J - 5")
-    >>> net.add_node("B","D + F - J + 2")
-    >>> net.add_node("A","B + C - E + G - 6")
+    >>> exp_block=[
+    ...   ("F","6"), ("G","7"), ("H","8"), ("I","9"), ("J","10"),
+    ...   ("C","F + I - 12"), ("D","H - 4"), ("E","J - 5"),
+    ...   ("B","D + F - J + 2"), ("A","B + C - E + G - 6")
+    ... ]
+    >>> net=CalcNet(auto_recalc=False,exp_block=exp_block)
     >>> net._update_evaluation_order()
     >>> ordering = net._collect_stages()
     >>> o=[stage.sort() for stage in ordering] #For presentation purposes only
@@ -697,10 +683,8 @@ class CalcNet:
     Assumes the stage labeling of each node is already up-to-date.
     If no node ID is given, all nodes are evaluated.
     
-    >>> net=CalcNet(auto_recalc=False)
-    >>> net.add_node("X","0")
-    >>> net.add_node("Y","X + 1")
-    >>> net.add_node("Z","Y + 1")
+    >>> exp_block=[("X","0"), ("Y","X + 1"), ("Z","Y + 1")]
+    >>> net=CalcNet(auto_recalc=False,exp_block=exp_block)
     >>> net._evaluate_from("X")
     >>> net.adjacency["Z"].value
     2
