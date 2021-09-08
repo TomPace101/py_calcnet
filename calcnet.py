@@ -31,7 +31,6 @@ def is_sorted(seq):
   True
   >>> is_sorted([None, None, 1, 2, 3])
   True
-
   """
   if len(seq)<=1:
     return True
@@ -60,7 +59,6 @@ def get_uniques(seq):
   [99]
   >>> get_uniques([])
   []
-
   """
   if len(seq)<=1:
     return seq
@@ -104,7 +102,8 @@ def get_differences(list_a,list_b):
   Returns:
 
     - not_in_a = elements in list b not in list a
-    - not_in_b = elements in list a not in list b"""
+    - not_in_b = elements in list a not in list b
+  """
   assert is_sorted(list_a), "Received unsorted list A."
   assert is_sorted(list_b), "Received unsorted list B."
   idx_a=idx_b=0
@@ -148,7 +147,8 @@ class CalcNode:
     - discovered = boolean, True when previously discovered in a walk of the graph
     - expression = calculation expression for this node
     - value = result of the expression evaluation (None if not yet evaluated)
-    - stage = integer identifying the calculation stage to which the node belongs"""
+    - stage = integer identifying the calculation stage to which the node belongs
+  """
   def __init__(self,node_id,expression):
     self.node_id=node_id
     self.forward_deps=[]
@@ -167,7 +167,8 @@ class CalcNode:
 
     Returns:
 
-      - reverse_deps = list of node ids for the reverse dependencies"""
+      - reverse_deps = list of node ids for the reverse dependencies
+    """
     ##TODO: just use whitespace now
     parsed_expression=self.expression.split()
     #Get the new list of dependencies
@@ -208,7 +209,6 @@ class CalcNet:
   1
   >>> net.count()
   (11, 16)
-
   """
   def __init__(self,auto_recalc=True,exp_block=None):
     """New calculation network, optionally with initial expressions
@@ -216,7 +216,8 @@ class CalcNet:
     Arguments:
 
       - auto_recalc = optional boolean for the object's ``auto_recalc`` attribute
-      - exp_block = sequence of pairs (node ID, expression) to populate the network"""
+      - exp_block = sequence of pairs (node ID, expression) to populate the network
+    """
     #Set the level of automation
     self.auto_recalc=auto_recalc
     #Initialize adjacency dictionary
@@ -242,7 +243,8 @@ class CalcNet:
 
     Arguments:
 
-      - fpath = path to input file, as a string"""
+      - fpath = path to input file, as a string
+    """
     ##TODO: implement
     raise NotImplementedError("Loading from file not yet supported")
     net = cls()
@@ -254,7 +256,8 @@ class CalcNet:
 
     Arguments:
 
-      - fpath = path to the output file, as a string"""
+      - fpath = path to the output file, as a string
+    """
     ##TODO: implement
     raise NotImplementedError("Saving to file not yet supported")
     return
@@ -298,7 +301,6 @@ class CalcNet:
     >>> net.add_node("D","A - 5")
     >>> net.adjacency["D"].stage
     2
-    
     """
     self.adjacency[node_id]=CalcNode(node_id,expression)
     self.update_adjacencies(node_id,process_forward_deps)
@@ -343,7 +345,6 @@ class CalcNet:
     1
     >>> net.adjacency["A"].stage
     3
-
     """
     self.adjacency[node_id].expression=expression
     self.update_adjacencies(node_id)
@@ -369,7 +370,6 @@ class CalcNet:
     >>> net.remove_node("Y")
     Traceback (most recent call last):
     AssertionError: Cannot remove Y because other nodes depend on it: ['Z'].
-
     """
     #Make sure nothing depends on this node
     fwd=self.adjacency[node_id].forward_deps
@@ -389,7 +389,6 @@ class CalcNet:
       
     If both ``update_only`` and ``add_only`` are True,
     there will be an exception unless the expression block is completely empty.
-    
     """
     for node_id,expression in exp_block:
       if node_id in self.adjacency.keys():
@@ -405,7 +404,8 @@ class CalcNet:
     """Compute the calculation stage number for the specified node
 
     The stages of the reverse dependencies are used for this calculation.
-    If those stages are not already up-to-date, the stage returned here will be wrong."""
+    If those stages are not already up-to-date, the stage returned here will be wrong.
+    """
     if len(self.adjacency[node_id].reverse_deps)==0:
       return 0
     else:
@@ -435,7 +435,6 @@ class CalcNet:
     11
     >>> len([nd for nd in net.walk(breadth_first=False)])
     11
-
     """
     #Mark all nodes as undiscovered
     for node_id in self.adjacency.values():
@@ -514,7 +513,6 @@ class CalcNet:
 
     >>> net.adjacency["A"].reverse_deps
     [None]
-    
     """
     #Get the list of reverse dependencies
     reverse_deps=self.adjacency[node_id].process_expression()
@@ -656,7 +654,6 @@ class CalcNet:
     If the network contains a cycle, the attempt to order will fail.
 
     TODO: example with a cycle
-
     """
     self._trace_unsatisfied(start_node_id)
     self._update_stage_labels(start_node_id)
@@ -691,7 +688,6 @@ class CalcNet:
     ['D']
     >>> ordering[2]
     ['E', 'F']
-
     """
     start_level=self.adjacency[start_node_id].stage
     ordering=[[] for i in range(self.num_stages - start_level)]
@@ -716,7 +712,6 @@ class CalcNet:
     >>> net.evaluate_node("B")
     >>> net.adjacency["B"].value
     10
-
     """
     #Get the node
     node = self.adjacency[node_id]
@@ -745,7 +740,6 @@ class CalcNet:
     >>> net._evaluate_from("X")
     >>> net.adjacency["Z"].value
     2
-
     """
     #Get the nodes to recalculate grouped by stage
     ordering = self._collect_stages(start_node_id)
@@ -758,7 +752,8 @@ class CalcNet:
   def recalculate_from(self,start_node_id=None):
     """Perform a recalculation of the network starting from the given node ID.
 
-    If no node ID is given, a recalculation of the entire network is performed"""
+    If no node ID is given, a recalculation of the entire network is performed
+    """
     #Update the evaluation order
     self._update_evaluation_order(start_node_id)
     #Do the evaluations
