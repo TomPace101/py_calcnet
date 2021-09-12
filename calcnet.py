@@ -6,6 +6,7 @@ For now, test with:
 
 #Stanard library imports
 import collections
+import csv
 
 def is_sorted(seq):
   """Return True if the sequence is properly sorted
@@ -210,6 +211,8 @@ class CalcNet:
   >>> net.count()
   (11, 16)
   """
+  metadata_attrs=['auto_recalc']
+  metadata_separator="---"
   def __init__(self,auto_recalc=True,exp_block=None):
     """New calculation network, optionally with initial expressions
 
@@ -236,8 +239,8 @@ class CalcNet:
       self.insert_expressions(exp_block)
     return
   @classmethod
-  def load(cls,fpath):
-    """Load a calculation network from a file
+  def load_csv(cls,fpath):
+    """Load a calculation network from a CSV file
 
     The file should not include the root node.
 
@@ -245,18 +248,44 @@ class CalcNet:
 
       - fpath = path to input file, as a string
     """
-    ##TODO: implement
-    raise NotImplementedError("Loading from file not yet supported")
-    ##TODO: should we let the network's auto-recalc setting be active as we load it?
+    #Initialize without auto recalc
     net = cls(auto_recalc=False)
-    #Read the entire file
-    #Process the metadata portion
-    #Add all the expressions
+    #Store the eventual auto recalc setting
+    auto_recalc = True
+    #Open the file for reading
+    with open(fpath,'r',newline='') as fp:
+      rd=csv.reader(fp)
+      section=0 #To keep track of which data section we're in
+      #Go through each line
+      for row in rd:
+        #Section separators
+        if len(row) == 1 and row[0]==cls.metadata_separator:
+          section += 1
+        #Process the metadata portion
+        elif section == 0:
+          assert row[0] in cls.metadata_attrs, "Invalid CalcNet attribute: {}".format(row[0])
+          attr, val = row
+          if attr == "auto_recalc":
+            #Don't set auto_recalc now, just store it for later
+            auto_recalc = val
+          else:
+            #Set the attribute
+            setattr(net,attr,val)
+        #Add all the expressions and set values
+        elif section == 1:
+          node_id, expression, value = row
+          net.add_node(node_id,expression,process_forward_deps=False)
+          net.adjacency[node_id].value = value
+    #Now process all the forward dependencies
+    net._set_all_forward_deps()
     #Set auto_recalc to the specified value
+    net.auto_recalc = auto_recalc
     #If auto_recalc, evaluate
+    if net.auto_recalc:
+      net.recalculate_from()
     return net
-  def save(self,fpath):
-    """Write the calculation network to a file
+  def save_csv(self,fpath):
+    """Write the calculation network to a CSV file
 
     The output file will not include the root node.
 
@@ -266,19 +295,28 @@ class CalcNet:
 
     If it already exists, the output file will be overwritten.
     """
+    ##TODO: strings aren't quoted
     #Collect the stage order for the entire graph
     ordering = self._collect_stages()
     #Open the file for writing
-    ##TODO: should we use the CSV module for this?
-    with open(fpath,"w") as fp:
-      ##TODO: write out network properties as metadata
+    with open(fpath,"w",newline='') as fp:
+      #Write in CSV format
+      wr=csv.writer(fp)
+      #Write network metadata
+      for attr in self.metadata_attrs:
+        wr.writerow([attr,getattr(self,attr)])
+      #Separator row
+      wr.writerow([self.metadata_separator])
       #Iterate over stages and nodes within each stage
-      for stage in ordering:
+      #Skip the root node
+      for stage in ordering[1:]:
+        #Not strictly necessary, but to make output order deterministic
+        stage.sort()
         for node_id in stage:
           node = self.adjacency[node_id]
           #Write the node ID and its expression
-          outstr="{},{},{}".format(node_id,node.expression,node.value)
-          fp.write(outstr)
+          outrow=[node_id,node.expression,node.value]
+          wr.writerow(outrow)
     #Done
     return
   def count(self):
