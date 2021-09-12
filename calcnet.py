@@ -137,6 +137,9 @@ class CalcNode:
   TODO: expressions are currently in python syntax, but this will change.
   TODO: the only variables currently allowed in an expression are single uppercase letters, but this will change.
 
+  >>> CalcNode("A","5")
+  <A, 5>
+
   Attributes:
 
     - node_id = ID for this node, which may not be a string
@@ -161,6 +164,10 @@ class CalcNode:
     self.expression=expression
     self.value=None
     return
+  def __str__(self):
+    return "<{}, {}>".format(self.node_id,self.expression)
+  def __repr__(self):
+    return str(self)
   def process_expression(self):
     """Read the expression to obtain the reverse dependencies
 
@@ -360,6 +367,7 @@ class CalcNet:
     >>> net.adjacency["D"].stage
     2
     """
+    assert node_id not in self.adjacency.keys(), "Node already exists: {}".format(node_id)
     self.adjacency[node_id]=CalcNode(node_id,expression)
     self.update_adjacencies(node_id,process_forward_deps)
     #Add to the appropriate calculation stage
