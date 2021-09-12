@@ -281,7 +281,7 @@ class CalcNet:
         #Add all the expressions and set values
         elif section == 1:
           node_id, expression, value = row
-          net.add_node(node_id,expression,process_forward_deps=False)
+          net.add_node(node_id,str(expression),process_forward_deps=False)
           net.adjacency[node_id].value = value
     #Now process all the forward dependencies
     net._set_all_forward_deps()
@@ -302,7 +302,6 @@ class CalcNet:
 
     If it already exists, the output file will be overwritten.
     """
-    ##TODO: strings aren't quoted
     #Collect the stage order for the entire graph
     ordering = self._collect_stages()
     #Open the file for writing
