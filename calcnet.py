@@ -442,6 +442,41 @@ class CalcNet:
     #Remove the node from the adjacency list
     self.adjacency.pop(node_id)
     return
+  def rename_node(self,old_id,new_id):
+    """Change the ID of an existing node, and update dependencies accordingly
+
+    Arguments:
+
+      - old_id = old ID for the node
+      - new_id = new ID for the node
+
+    >>> exp_block=[
+    ...   ("A","1"), ("B","1"), ("C","1"), ("D","1"),
+    ...   ("E","A + B + C - 2"),
+    ...   ("F","B + C + D - 2"),
+    ...   ("G","E + F + A + D - 3"),
+    ...   ("H","A + B + D + G - 3"),
+    ...   ("I","E + F + G - 2"),
+    ...   ("J","G + H + I - 2")
+    ... ]
+    >>> net=CalcNet(auto_recalc=False,exp_block=exp_block)
+    """
+    #Get the node itself
+    node=self.adjacency[old_id]
+    #Assign it to the new ID
+    self.adjacency[new_id]=node
+    node.node_id = new_id
+    #Revise the forward dependencies of all the reverse dependencies
+    for dep_id in node.reverse_deps:
+      old_fwds=self.adjacency[dep_id].forward_deps
+      self.adjacency[dep_id].foward_deps=[nd if nd != old_id else new_id for nd in old_fwds]
+    #Revise the expressions and reverse dependencies of all the forward dependencies
+    ##TODO
+    raise NotImplementedError()
+    for dep_id in node.forward_deps:
+      pass
+    #Done
+    return
   def insert_expressions(self,exp_block,update_only=False,add_only=False,process_forward_deps=True):
     """Add or update expressions for a group of nodes
 
