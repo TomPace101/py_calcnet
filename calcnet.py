@@ -1,5 +1,7 @@
 """A network of calculations, with dependency tracking.
 
+This is a fairly straightforward application of a Directed Acyclic Graph (DAG).
+
 For now, test with:
 ``python -m doctest calcnet.py``
 """
