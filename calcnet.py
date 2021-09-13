@@ -485,7 +485,10 @@ class CalcNet:
     #Revise the expressions and reverse dependencies of all the forward dependencies
     for dep_id in node.forward_deps:
       new_exp = self.adjacency[dep_id].expression.replace(old_id,new_id)
-      self.revise_node(dep_id,new_exp)
+      self.adjacency[dep_id].expression=new_exp
+      old_revs=self.adjacency[dep_id].reverse_deps
+      self.adjacency[dep_id].reverse_deps=[nd if nd != old_id else new_id for nd in old_revs]
+      self.adjacency[dep_id].reverse_deps.sort()
     #Remove the old ID from the adjacency list
     self.adjacency.pop(old_id)
     #Done
