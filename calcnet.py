@@ -460,6 +460,15 @@ class CalcNet:
     ...   ("J","G + H + I - 2")
     ... ]
     >>> net=CalcNet(auto_recalc=False,exp_block=exp_block)
+    >>> net.rename_node("G","X")
+    >>> "G" in net.adjacency.keys()
+    False
+    >>> net.adjacency["X"].forward_deps
+    ['H', 'I', 'J']
+    >>> net.adjacency["F"].forward_deps
+    ['I', 'X']
+    >>> net.adjacency["J"].reverse_deps
+    ['H', 'I', 'X']
     """
     #Get the node itself
     node=self.adjacency[old_id]
@@ -469,12 +478,14 @@ class CalcNet:
     #Revise the forward dependencies of all the reverse dependencies
     for dep_id in node.reverse_deps:
       old_fwds=self.adjacency[dep_id].forward_deps
-      self.adjacency[dep_id].foward_deps=[nd if nd != old_id else new_id for nd in old_fwds]
+      self.adjacency[dep_id].forward_deps=[nd if nd != old_id else new_id for nd in old_fwds]
+      self.adjacency[dep_id].forward_deps.sort()
     #Revise the expressions and reverse dependencies of all the forward dependencies
-    ##TODO
-    raise NotImplementedError()
     for dep_id in node.forward_deps:
-      pass
+      new_exp = self.adjacency[dep_id].expression.replace(old_id,new_id)
+      self.revise_node(dep_id,new_exp)
+    #Remove the old ID from the adjacency list
+    self.adjacency.pop(old_id)
     #Done
     return
   def insert_expressions(self,exp_block,update_only=False,add_only=False,process_forward_deps=True):
