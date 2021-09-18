@@ -195,6 +195,22 @@ class CalcNode:
     #Compile the expression
     ##TODO: no compiled form for now
     return reverse_deps
+  def evaluate_with(self,parameters):
+    """Evaluate the expression with given values for its parameters
+
+    Arguments:
+
+      - parameters = dictionary of parameters {parameter: value}
+        Each parameter in the node's expression must be included.
+        Additional parameters are ignored.
+
+    Returns:
+
+      - value = the result of the evaluation
+    """
+    ##TODO: no compiled form for now
+    return eval(self.expression,parameters)
+
 
 class CalcNet:
   """A calculation network
@@ -841,7 +857,7 @@ class CalcNet:
       for dep_id in value_deps:
         parameters[dep_id] = self.adjacency[dep_id].value
       #Evaluate
-      node.value=eval(node.expression,parameters)
+      node.value = node.evaluate_with(parameters)
       #Value has now been updated
       node.up_to_date = True
     return
