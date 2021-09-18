@@ -219,11 +219,14 @@ class CalcNet:
   
     - adjacency = adjacency dictionary for the graph of calculation nodes, {``node_id``: ``node``}
     - auto_recalc = Boolean, True to automatically recalculate on a change to a node
-    - root_node = the root node of the calculation network:
-        The reverse dependencies of all nodes eventually lead back to this one,
-        and it has no reverse dependencies of its own.
-        This node's dictionary entry is ``None``.
     - num_stages = the total number of calculation stages
+
+  The network is given a "root node";
+  the reverse dependencies of all nodes eventually lead back to this one,
+  and it has no reverse dependencies of its own.
+  The root node is in the adjacency dictionary with a key of ``None``,
+  as the intention is to not use the root node in any expressions.
+  Instead, it's forward dependencies are nodes with expressions containing only constants.
 
   >>> exp_block=[
   ...   ("F","6"), ("G","7"), ("H","8"), ("I","9"), ("J","10"),
@@ -254,10 +257,9 @@ class CalcNet:
     # The "node id" for the root node is ``None``.
     # This prevents conflict with a user-defined identifier,
     # and allows the default behavior of ``recalculate_from`` and related functions
-    self.root_node=CalcNode(None,"")
-    self.adjacency[None]=self.root_node
+    self.adjacency[None]=CalcNode(None,"")
     #Set up the ordering
-    self.root_node.stage=0
+    self.adjacency[None].stage=0
     self.num_stages=1
     #Add any provided nodes
     if exp_block is not None:
