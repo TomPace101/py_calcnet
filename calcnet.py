@@ -6,9 +6,18 @@ For now, test with:
 ``python -m doctest calcnet.py``
 """
 
+#Refernces
+#ast module:
+#https://greentreesnakes.readthedocs.io/en/latest/
+
 #Stanard library imports
+import ast
 import collections
 import csv
+
+#Constants
+AST_FILENAME="<ast>"
+AST_MODE="eval"
 
 def is_sorted(seq):
   """Return True if the sequence is properly sorted
@@ -152,6 +161,7 @@ class CalcNode:
     - up_to_date = boolean, False when the node needs to be re-calculated because of a change
     - discovered = boolean, True when previously discovered in a walk of the graph
     - expression = calculation expression for this node
+    - compiled = code object compiled from the expression
     - value = result of the expression evaluation (None if not yet evaluated)
     - stage = integer identifying the calculation stage to which the node belongs
   """
@@ -171,20 +181,25 @@ class CalcNode:
   def __repr__(self):
     return str(self)
   def process_expression(self):
-    """Read the expression to obtain the reverse dependencies
+    """Compile the expression, and parse it to obtain the reverse dependencies
 
-    TODO: compile the expression (not currently applicable)
+    As a side effect, the compiled code object is stored.
 
     Returns:
 
       - reverse_deps = list of node ids for the reverse dependencies
+
+    >>> node = CalcNode("alpha","beta + gamma + delta")
+    >>> node.process_expression()
+    ['beta', 'delta', 'gamma']
     """
-    ##TODO: just use whitespace now
-    parsed_expression=self.expression.split()
-    #Get the new list of dependencies
-    ##TODO: only allow single uppercase letters for now
-    candidates=[token for token in parsed_expression if len(token)==1]
-    new_deps=[token for token in candidates if ord(token)>=65 and ord(token)<=90]
+    #Parse to obtain the AST
+    tree = ast.parse(self.expression,mode=AST_MODE)
+    #Walk the tree to get the variables
+    new_deps=[]
+    for ast_node in ast.walk(tree):
+      if isinstance(ast_node,ast.Name):
+        new_deps.append(ast_node.id)
     #Sort for later efficiency
     new_deps.sort()
     #Remove duplications so items are unique
@@ -193,7 +208,8 @@ class CalcNode:
     if len(reverse_deps)==0:
       reverse_deps=[None]
     #Compile the expression
-    ##TODO: no compiled form for now
+    self.compiled = compile(tree,AST_FILENAME,AST_MODE)
+    #Done
     return reverse_deps
   def evaluate_with(self,parameters):
     """Evaluate the expression with given values for its parameters
@@ -208,8 +224,7 @@ class CalcNode:
 
       - value = the result of the evaluation
     """
-    ##TODO: no compiled form for now
-    return eval(self.expression,parameters)
+    return eval(self.compiled,parameters)
 
 
 class CalcNet:
