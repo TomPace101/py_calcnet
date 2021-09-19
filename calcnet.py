@@ -145,8 +145,6 @@ class CalcNode:
   """A node in a calculation network.
 
   A calculation node is defined by an expression that can be evaluated to produce a value.
-  TODO: expressions are currently in python syntax, but this will change.
-  TODO: the only variables currently allowed in an expression are single uppercase letters, but this will change.
 
   >>> CalcNode("A","5")
   <A, 5>
@@ -849,8 +847,6 @@ class CalcNet:
     The result is not returned, but is stored in the ``value`` attribute of the node.
 
     All reverse dependencies must be evaluated first.
-    
-    ##TODO: this uses python ``eval`` for now
     
     >>> net=CalcNet(auto_recalc=False)
     >>> net.add_node("A","5")
