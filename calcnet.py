@@ -183,6 +183,10 @@ class CalcNode:
 
     As a side effect, the compiled code object is stored.
 
+    TODO: the parsing method is too simple:
+    it will falsely identify loop variables as dependencies,
+    for example in comprehensions
+
     Returns:
 
       - reverse_deps = list of node ids for the reverse dependencies
