@@ -22,6 +22,7 @@ For now, test with:
 ##Just use an "old value" attribute for each node,
 ##And only update that after the entire calculation is complete,
 ##Or even immediately before a new one.
+##And then _delete_ it (set them all to None) after the calculation is complete.
 ##And if you don't hash, the time required for comparison shouldn't be worse
 ##than the time required for re-evaluation except in unusual cases.
 ##(Maybe there's a heuristic to skip the comparison for nodes that are simple to re-evaluate.)
