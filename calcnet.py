@@ -18,7 +18,12 @@ For now, test with:
 ##If that didn't change, you just skip the calculation.
 ##But that takes up more memory.
 ##And in some cases that calculation could be more expensive than re-evaluating the node.
-
+##It doesn't have to take up a lot more memory, though:
+##Just use an "old value" attribute for each node,
+##And only update that after the entire calculation is complete,
+##Or even immediately before a new one.
+##And if you don't hash, the time required for comparison shouldn't be worse
+##than the time required for re-evaluation except in unusual cases.
 
 #Refernces
 #ast module:
