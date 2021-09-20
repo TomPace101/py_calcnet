@@ -6,6 +6,20 @@ For now, test with:
 ``python -m doctest calcnet.py``
 """
 
+##TODO: when a node is recalculated, check if its value changed or not.
+##If it didn't change, you might be able to reduce the recalculation of other nodes.
+##Walk the descendants.
+##Any that have all their reverse dependencies "clean" won't change either.
+##The catch is that this is the part I was thinking about parallelizing.
+##And this could be pretty tricky in parallel.
+##Or maybe it's not a walk.
+##The way things like "make" and "doit" handle this is by storing the
+##last states of the dependencies, or a hash thereof.
+##If that didn't change, you just skip the calculation.
+##But that takes up more memory.
+##And in some cases that calculation could be more expensive than re-evaluating the node.
+
+
 #Refernces
 #ast module:
 #https://greentreesnakes.readthedocs.io/en/latest/
