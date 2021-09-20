@@ -24,6 +24,7 @@ For now, test with:
 ##Or even immediately before a new one.
 ##And if you don't hash, the time required for comparison shouldn't be worse
 ##than the time required for re-evaluation except in unusual cases.
+##(Maybe there's a heuristic to skip the comparison for nodes that are simple to re-evaluate.)
 
 #Refernces
 #ast module:
