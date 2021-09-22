@@ -93,27 +93,6 @@ def is_sorted(seq):
       last = itm
   return res
 
-def get_uniques(seq):
-  """Return a list of the unique items in a a sorted sequence.
-
-  >>> get_uniques([1,2,2,3])
-  [1, 2, 3]
-  >>> get_uniques([99])
-  [99]
-  >>> get_uniques([])
-  []
-  """
-  if len(seq)<=1:
-    return seq
-  else:
-    last=seq[0]
-    out=[last]
-    for itm in seq[1:]:
-      if itm != last:
-        last=itm
-        out.append(last)
-    return out
-
 def get_differences(list_a,list_b):
   """For two sorted lists a and b, find the elements in each not in the other
 
@@ -175,8 +154,15 @@ def get_differences(list_a,list_b):
 def identify_dependencies(tree):
   """Identify the names in an AST that are dependencies
 
+  The returned sequence will contain each dependency only once.
+
   TODO: need to do more testing on this approach.
   There may still be cases that break it.
+
+  >>> identify_dependencies(ast.parse("x + x - 5"))
+  ['x']
+  >>> identify_dependencies(ast.parse("[itm+1 for itm in source_list]"))
+  ['source_list']
 
   """
   #Store all the names that might be dependencies
@@ -254,11 +240,9 @@ class CalcNode:
     #Parse to obtain the AST
     tree = ast.parse(self.expression,mode=AST_MODE)
     #Get the dependencies
-    new_deps=identify_dependencies(tree)
+    reverse_deps=identify_dependencies(tree)
     #Sort for later efficiency
-    new_deps.sort()
-    #Remove duplications so items are unique
-    reverse_deps=get_uniques(new_deps)
+    reverse_deps.sort()
     #If there are no dependencies, link to the root node
     if len(reverse_deps)==0:
       reverse_deps=[None]
