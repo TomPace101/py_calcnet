@@ -172,6 +172,32 @@ def get_differences(list_a,list_b):
     not_in_a += list_b[idx_b:]
   return not_in_a, not_in_b
 
+def identify_dependencies(tree):
+  """Identify the names in an AST that are dependencies
+
+  TODO: need to do more testing on this approach.
+  There may still be cases that break it.
+
+  """
+  #Store all the names that might be dependencies
+  candidates={}
+  #Walk the tree
+  for ast_node in ast.walk(tree):
+    if isinstance(ast_node,ast.Call):
+      #Function calls have a name that is not a dependency
+      candidates[ast_node.func.id]=False
+    elif isinstance(ast_node,ast.Name):
+      if ast_node.id not in candidates.keys():
+        #Assume this name is a dependency for now
+        candidates[ast_node.id] = True
+      if isinstance(ast_node.ctx,ast.Store):
+        #A value is stored in the name, so it is not a dependency, even if loaded elsewhere
+        candidates[ast_node.id] = False
+  #Select the names that are still flagged as dependencies
+  new_deps=[vname for vname,status in candidates.items() if status]
+  #Done
+  return new_deps
+
 class CalcNode:
   """A node in a calculation network.
 
@@ -214,10 +240,6 @@ class CalcNode:
 
     As a side effect, the compiled code object is stored.
 
-    TODO: the parsing method is too simple:
-    it will falsely identify loop variables as dependencies,
-    for example in comprehensions
-
     Returns:
 
       - reverse_deps = list of node ids for the reverse dependencies
@@ -225,14 +247,14 @@ class CalcNode:
     >>> node = CalcNode("alpha","beta + gamma + delta")
     >>> node.process_expression()
     ['beta', 'delta', 'gamma']
+    >>> node = CalcNode("arbitrary_sum","sum([val+1 for val in value_source])")
+    >>> node.process_expression()
+    ['value_source']
     """
     #Parse to obtain the AST
     tree = ast.parse(self.expression,mode=AST_MODE)
-    #Walk the tree to get the variables
-    new_deps=[]
-    for ast_node in ast.walk(tree):
-      if isinstance(ast_node,ast.Name):
-        new_deps.append(ast_node.id)
+    #Get the dependencies
+    new_deps=identify_dependencies(tree)
     #Sort for later efficiency
     new_deps.sort()
     #Remove duplications so items are unique
