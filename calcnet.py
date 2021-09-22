@@ -26,6 +26,16 @@ For now, test with:
 ##And if you don't hash, the time required for comparison shouldn't be worse
 ##than the time required for re-evaluation except in unusual cases.
 ##(Maybe there's a heuristic to skip the comparison for nodes that are simple to re-evaluate.)
+##Maybe instead of storing the old value, you store a boolean for "changed",
+##and set it after the node is re-calculated. (before overwriting it, of course)
+##That reduces the number of comparisons to just once per node.
+##Also, if none of the nodes in a given stage changed,
+##then all subsequent stages can be skipped.
+##But there's more than that.
+##If you recalculate as you walk, you can catch entire trees that don't have to be touched.
+##But how would that be done in parallel?
+##Well, you'd need to walk in "stage" order. So maybe it can be.
+
 
 #Refernces
 #ast module:
