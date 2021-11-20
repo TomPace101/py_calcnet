@@ -36,8 +36,15 @@ For now, test with:
 ##But how would that be done in parallel?
 ##Well, you'd need to walk in "stage" order. So maybe it can be.
 
+##TODO: allow for different "languages" to be used for the expressions.
+##There are some third-party modules that could provide interesting options.
 
-#Refernces
+##TODO: allow for invalid nodes.
+##This includes errors in formulas, missing depdendencies, etc.
+##Such nodes should be flagged, somehow (maybe like a boolean value),
+##and of course all their forward dependencies will be invalid as well.
+
+#References
 #ast module:
 #https://greentreesnakes.readthedocs.io/en/latest/
 
