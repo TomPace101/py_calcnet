@@ -40,7 +40,7 @@ For now, test with:
 ##There are some third-party modules that could provide interesting options.
 
 ##TODO: allow for invalid nodes.
-##This includes errors in formulas, missing depdendencies, etc.
+##This includes errors in formulas, missing dependencies, etc.
 ##Such nodes should be flagged, somehow (maybe like a boolean value),
 ##and of course all their forward dependencies will be invalid as well.
 
