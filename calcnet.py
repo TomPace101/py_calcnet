@@ -6,6 +6,16 @@ For now, test with:
 ``python -m doctest calcnet.py``
 """
 
+##TODO: there is a drawback to the parallelism by "stages":
+##it could be very inefficient if some nodes in a given stage have
+##much longer calculation times than others.
+##There would be idle workers while waiting for the long-running worker(s) to finish.
+##You could, of course, try evaluating a single node in parallel, but that's a hard problem.
+##Alternatively, you could have the idle workers search for nodes in the next stage
+##(and possibly even later stages) that would be ready for calculation.
+##But tracking that would be equivalent to not having stages in first place.
+##So maybe stages are not helpful.
+
 ##TODO: when a node is recalculated, check if its value changed or not.
 ##If it didn't change, you might be able to reduce the recalculation of other nodes.
 ##Walk the descendants.
