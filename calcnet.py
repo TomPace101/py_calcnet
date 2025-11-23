@@ -6,6 +6,8 @@ For now, test with:
 ``python -m doctest calcnet.py``
 """
 
+##TODO: refactor to remove storage of reverse dependencies
+
 ##TODO: there is a drawback to the parallelism by "stages":
 ##it could be very inefficient if some nodes in a given stage have
 ##much longer calculation times than others.
